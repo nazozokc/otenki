@@ -27,7 +27,7 @@ export const today = async (Ido: number, Keido: number): Promise<void> => {
 
   table.push([
     `${data.daily.temperature_2m_min[0]}°C ~ ${data.daily.temperature_2m_max[0]}°C`,
-    weatherIcon(data.daily.weather_code[0]),
+    weatherIcon(data.daily.weather_code[0]!),
   ]);
 
   console.log(table.toString());
