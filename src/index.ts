@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { Command } from "commander";
 import { version } from "./version.ts";
 import { today } from "./today.ts";
