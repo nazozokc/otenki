@@ -11,8 +11,8 @@ program
 
 program
   .command("today")
-  .argument("Ido")
-  .argument("Keido")
+  .argument("<Ido>")
+  .argument("<Keido>")
   .action((Ido, Keido) => {
     today(Ido, Keido);
   });

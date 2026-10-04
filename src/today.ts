@@ -1,6 +1,15 @@
 import Table from "cli-table3";
 import { weatherIcon } from "./weather.icon.ts";
 
+type WeatherData = {
+  current: {
+    temperature_2m: number;
+    weather_code: number;
+    wind_speed_10m: number;
+    time: string;
+  };
+};
+
 export const today = async (Ido: number, Keido: number): Promise<void> => {
   const now = new Date();
   const year = now.getFullYear();
@@ -10,7 +19,7 @@ export const today = async (Ido: number, Keido: number): Promise<void> => {
     `https://api.open-meteo.com/v1/forecast?latitude=${Ido}&longitude=${Keido}&start_date=${year}-${month}-${day}&end_date=${year}-${month}-${day}&daily=temperature_2m_max,temperature_2m_min,weather_code`,
   );
 
-  const data = await response.json();
+  const data = (await response.json()) as WeatherData;
 
   const table = new Table({
     head: ["temp", "weather", "wind_speed"],
