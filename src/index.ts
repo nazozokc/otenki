@@ -13,6 +13,6 @@ program
   .command("today")
   .argument("<Ido>")
   .argument("<Keido>")
-  .action((Ido, Keido) => {
-    today(Ido, Keido);
+  .action(async (Ido, Keido) => {
+    await today(Ido, Keido);
   });
