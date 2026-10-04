@@ -4,6 +4,11 @@
   "bin": {
     "otenki": "src/index.ts"
   },
+  "license": "MIT",
+  "author": {
+    "name": "nazozokc",
+    "url": "https://github.com/nazozokc"
+  },
   "type": "module",
   "devDependencies": {
     "@types/bun": "latest"
