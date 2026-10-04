@@ -16,7 +16,7 @@ export const today = async (Ido: number, Keido: number): Promise<void> => {
   const day = String(now.getDate()).padStart(2, "0");
 
   const response = await fetch(
-    `https://api.open-meteo.com/v1/forecast?latitude=${Ido}&longitude=${Keido}&start_date=${year}-${month}-${day}&end_date=${year}-${month}-${day}&daily=temperature_2m_max,temperature_2m_min,weather_code`,
+    `https://api.open-meteo.com/v1/forecast?latitude=${Ido}&longitude=${Keido}&current=temperature_2m,weather_code,wind_speed_10m&timezone=Asia%2FTokyo`,
   );
 
   const data = (await response.json()) as WeatherData;
