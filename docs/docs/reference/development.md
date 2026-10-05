@@ -64,7 +64,7 @@ workflow は 3 本あります。
 | workflow          | 起動条件                 | やること                                                       |
 | ----------------- | ------------------------ | -------------------------------------------------------------- |
 | `ci.yml`          | main への push / PR      | Bun で test・型検査・build、`nix flake check` で全部のチェック |
-| `publish.yml`     | `v*` タグの push / 手動  | GitHub Release と npm publish                                  |
+| `publish.yml`     | release の公開 / 手動    | npm tarball の添付と npm publish                               |
 | `deploy-docs.yml` | `docs/**` の push / 手動 | VitePress をビルドして GitHub Pages へ                         |
 
 `ci.yml` の Nix job は `checks.build` `checks.tests` `checks.typecheck` `checks.treefmt` を全部含みます。ローカルで `nix flake check` が green なら CI も green です。
@@ -73,15 +73,16 @@ Bun の版は 3 本とも 1.4.2 に固定しています。nixpkgs が bun を�
 
 ### 公開の流れ
 
-バージョンの情報源は `apps/otenki/package.json` だけです。Nix ビルドもここを読み、`publish.yml` はタグと package.json が食い違うと落ちます。公開は「bump して tag を push」の 2 手順です。
+バージョンの情報源は `apps/otenki/package.json` だけです。Nix ビルドもここを読み、`publish.yml` はタグと package.json が食い違うと落ちます。公開は「bump して release を公開」の 2 手順です。
 
 ```sh
 # apps/otenki/package.json の version を bump して main へ入れる
-git tag "v$(jq -r .version < apps/otenki/package.json)"
-git push origin v0.1.0
+gh release create "v$(jq -r .version < apps/otenki/package.json)" --generate-notes
 ```
 
-タグを push すると `publish.yml` が走り、`npm pack` → 型検査とテスト → tarball を実際に起動 → GitHub Release（コミットログから notes を生成、npm tarball を添付）→ `npm publish --provenance` の順に処理します。`NPM_TOKEN` が無いリポジトリでは npm の job だけが飛ばされ、GitHub Release は出ます。
+`gh release create` はタグも一緒に作るので、タグを別々に push する必要はありません。release を**公開した**時点で `publish.yml` が走り、`npm pack` → 型検査とテスト → tarball を実際に起動 → npm tarball をその release に添付 → `npm publish --provenance` の順に処理します。`NPM_TOKEN` が無いリポジトリでは npm の job だけが飛ばれ、tarball は添付されます。release notes は `--generate-notes` が書いたままです。workflow は書き換えません。
+
+release を手で作った場合も `release: published` で起動するので同じです。逆に、タグの push だけでは走りません（`gh release create` がタグも push するため、両方を受けると 1 回の release で 2 本走って 2 本目の `npm publish` が必ず「その版は既に存在する」で落ちます）。
 
 同じタグを再実行したいときは Actions タブの `workflow_dispatch` を使います。main ではなく **タグの commit** を取り直すので、後から drift した版が publish されることはありません。
 

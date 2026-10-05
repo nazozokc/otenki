@@ -2,12 +2,15 @@ name: publish
 
 # 配布は「package.json が唯一のバージョン情報源」という原則に従う。
 # apps/otenki/package.json を bump して main へ入れたあと、
-#   git tag v$(jq -r .version < apps/otenki/package.json) && git push origin v...
-# を打つとこの workflow が走る。version を一致させないので、その一行で済む。
+#   gh release create "v$(jq -r .version < apps/otenki/package.json)" --generate-notes
+# で release を公開するとこの workflow が走る。version を一致させないので、その一行で済む。
 on:
-  push:
-    tags: ["v*"]
-  # タグは既に pushed 済みで、この release の再実行だけしたいとき用。
+  # 公開（published）された release が作動源。タグの push は見ない ——
+  # release を作るコマンドはタグも push するので、両方を受けると 1 回の release で
+  # 2 本走って、2 本目の npm publish が「その版は既に存在する」で必ず落ちる。
+  release:
+    types: [published]
+  # release は既に公開済みで、この release の再実行だけしたいとき用。
   workflow_dispatch:
     inputs:
       tag:
@@ -18,8 +21,8 @@ on:
 permissions:
   contents: read
 
-# 取消しはしない。publish は 2 系統（GitHub Release / npm）に分かれるので、
-# 片方だけ止めて片方が進むより、タグを消して初めからやり直す。
+# 取消しはしない。publish は 2 系統（release への添付 / npm）に分かれるので、
+# 片方だけ止めて片方が進むより、release を消して初めからやり直す。
 concurrency:
   group: publish-${{ github.ref }}
   cancel-in-progress: false
@@ -37,18 +40,18 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          # dispatch では明示のタグを、push では飛んできたタグを使う。どちらも
-          # バージョンを読むのは「そのタグの commit」の package.json に対して。
+          # dispatch では明示のタグを、release では公開済み release のタグを使う。
+          # どちらもバージョンを読むのは「そのタグの commit」の package.json に対して。
           ref: ${{ inputs.tag || github.ref }}
 
       - name: pick the tag
         id: pick
         run: |
-          # push では ref が tag を指す。dispatch では入力を使う。
+          # release イベントでは GITHUB_REF がその release のタグを指すので、
+          # push のときと同じ読み方で取れる。dispatch だけ明示入力を優先する。
+          tag="${GITHUB_REF_NAME}"
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             tag="${{ inputs.tag }}"
-          else
-            tag="${GITHUB_REF_NAME}"
           fi
 
           version="$(jq -r .version < "${WORKDIR}/package.json")"
@@ -70,7 +73,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          # resolve と同じ commit を切り出す。dispatch でも main ではなく
+          # resolve と同じ commit を切り出す。release でも dispatch でも main ではなく
           # タグの package.json に対して publish する。
           ref: ${{ inputs.tag || github.ref }}
 
@@ -115,27 +118,24 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      # gh は GITHUB_TOKEN も読むが、書込み権限の借用であることを明示しておく。
+      GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ inputs.tag || github.ref }}
-
       - uses: actions/download-artifact@v8
         with:
           name: npm-tarball
           path: ${{ runner.temp }}
 
-      # 既に release がある（同じタグを再 dispatch した）ときは --clobber で
-      # 添付と notes を置き換える。なければ新規に作る。
-      - name: create the release
+      # この workflow は published な release で起動するので、release は既に存在する。
+      # やるのは npm tarball の添付だけ。--clobber で同名アセットを置き換えるので、
+      # 同じタグを再 dispatch しても二重添付にならない。notes は書き換えない。
+      - name: attach the tarball
         run: |
-          args=(--title "${{ needs.resolve.outputs.tag }}" --generate-notes)
-          if gh release view "${{ needs.resolve.outputs.tag }}" > /dev/null 2>&1; then
-            args+=(--clobber)
-          fi
-          gh release create "${{ needs.resolve.outputs.tag }}" \
-            "${args[@]}" \
-            "${{ runner.temp }}/otenki-${{ needs.resolve.outputs.version }}.tgz"
+          gh release upload "${{ needs.resolve.outputs.tag }}" \
+            "${{ runner.temp }}/otenki-${{ needs.resolve.outputs.version }}.tgz" \
+            --clobber \
+            --repo "$GITHUB_REPOSITORY"
 
   npm:
     needs: [resolve, build]

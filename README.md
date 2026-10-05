@@ -167,19 +167,19 @@ directory instead.
 
 `apps/otenki/package.json` is the only place a version lives — the Nix build reads
 it, and `publish.yml` refuses to publish a tag that disagrees with it. So a
-release is a version bump plus one tag:
+release is a version bump plus one command:
 
 ```sh
 # 1. bump apps/otenki/package.json, commit, merge to main
-# 2. tag that exact commit and push the tag
-git tag "v$(jq -r .version < apps/otenki/package.json)"
-git push origin v0.1.0        # replace with the version you just tagged
+# 2. publish the release for that version
+gh release create "v$(jq -r .version < apps/otenki/package.json)" --generate-notes
 ```
 
-Pushing the tag runs `publish.yml`, which builds and tests the tarball, then
-creates the GitHub Release (notes generated from the commit log, with the npm
-tarball attached) and publishes to npm with provenance. npm is skipped if the
-`NPM_TOKEN` repository secret is not set, so the GitHub Release still lands.
+Publishing the release runs `publish.yml`, which builds and tests the tarball,
+attaches it to the release, and publishes to npm with provenance. npm is skipped
+if the `NPM_TOKEN` repository secret is not set, so the tarball still lands.
+Release notes are yours: the workflow only attaches the tarball and never rewrites
+them.
 
 The same tag can be re-run from the Actions tab via `workflow_dispatch`; it
 re-checks out the tagged commit rather than `main`, so a re-run cannot ship a
