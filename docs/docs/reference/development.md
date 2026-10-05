@@ -73,14 +73,24 @@ Bun の版は 3 本とも 1.4.2 に固定しています。nixpkgs が bun を�
 
 ### 公開の流れ
 
-バージョンの情報源は `apps/otenki/package.json` だけです。Nix ビルドもここを読み、`publish.yml` はタグと package.json が食い違うと落ちます。公開は「bump して release を公開」の 2 手順です。
+版は **release のタグ**が決めます。`apps/otenki/package.json` の version は `publish.yml` がタグから書いてくれるので、手で bump する手順はありません。Nix ビルドはその package.json を読むので、常に release の版と一致します。
 
 ```sh
-# apps/otenki/package.json の version を bump して main へ入れる
-gh release create "v$(jq -r .version < apps/otenki/package.json)" --generate-notes
+# 必要な変更を main へ入れる
+gh release create 0.1.3 --generate-notes
 ```
 
-`gh release create` はタグも一緒に作るので、タグを別々に push する必要はありません。release を**公開した**時点で `publish.yml` が走り、`npm pack` → 型検査とテスト → tarball を実際に起動 → npm tarball をその release に添付 → `npm publish --provenance` の順に処理します。`NPM_TOKEN` が無いリポジトリでは npm の job だけが飛ばれ、tarball は添付されます。release notes は `--generate-notes` が書いたままです。workflow は書き換えません。
+`gh release create` の引数がそのまま版です（先頭の `v` は付けても付けなくても動きます）。タグを別々に push する必要はありません。release を**公開した**時点で `publish.yml` が走り、次の順に処理します。
+
+1. `resolve` タグから版を引く（`v` を剥がし、`0.1.3` のような形でなければそこで落とす）
+2. `sync` main の `apps/otenki/package.json` と `bun.lock` をその版に直して `chore(release)` コミットを push する
+3. `build` タグの commit を取り出し `sync` と同じ版を当てて、`npm pack` → 型検査とテスト → tarball を実際に起動
+4. `release` その release に tarball を添付
+5. `npm` `npm publish --provenance`
+
+`bun.lock` も直すのは、`bun install --frozen-lockfile` が workspace の version を照合するからです。package.json の版だけ直すと `lockfile had changes, but lockfile is frozen` で落ちます（`ci.yml` と `checks.typecheck` も同じ install を使います）。書き換えは composite action `.github/actions/sync-version` が担当し、`build` と `npm` と `sync` の 3 つがこれを共有します。
+
+`NPM_TOKEN` が無いリポジトリでは npm の job だけが飛ばれ、tarball は添付されます。release notes は `--generate-notes` が書いたままです。workflow は書き換えません。
 
 release を手で作った場合も `release: published` で起動するので同じです。逆に、タグの push だけでは走りません（`gh release create` がタグも push するため、両方を受けると 1 回の release で 2 本走って 2 本目の `npm publish` が必ず「その版は既に存在する」で落ちます）。
 

@@ -67,7 +67,8 @@
                 && builtins.match "^apps/[^/]+/dist(/.*)?$" rel == null
               );
           };
-          # apps/otenki/package.json を唯一のバージョン情報源にする
+          # バージョン情報源は apps/otenki/package.json だけ。この version は
+          # publish.yml が release のタグから書き戻すので、常に公開した版と一致する。
           version = (pkgs.lib.importJSON ./apps/otenki/package.json).version;
           bun2nix' = bun2nix.packages.${system}.bun2nix;
           # bun.nix から作った bun 互換キャッシュ（sandbox 内のオフライン install 用）。

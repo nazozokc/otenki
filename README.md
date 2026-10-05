@@ -165,17 +165,18 @@ directory instead.
 
 ## Release
 
-`apps/otenki/package.json` is the only place a version lives — the Nix build reads
-it, and `publish.yml` refuses to publish a tag that disagrees with it. So a
-release is a version bump plus one command:
+The **release tag is the version**. `apps/otenki/package.json` is written by
+`publish.yml` from that tag — you never bump it by hand:
 
 ```sh
-# 1. bump apps/otenki/package.json, commit, merge to main
-# 2. publish the release for that version
-gh release create "v$(jq -r .version < apps/otenki/package.json)" --generate-notes
+# 1. land whatever the release needs on main
+# 2. publish a release whose tag is the version (v prefix optional)
+gh release create 0.1.3 --generate-notes
 ```
 
-Publishing the release runs `publish.yml`, which builds and tests the tarball,
+Publishing the release runs `publish.yml`, which writes that version into
+`apps/otenki/package.json` (and `bun.lock`, so `--frozen-lockfile` keeps working)
+and commits the result back to `main`, then builds and tests the tarball,
 attaches it to the release, and publishes to npm with provenance. npm is skipped
 if the `NPM_TOKEN` repository secret is not set, so the tarball still lands.
 Release notes are yours: the workflow only attaches the tarball and never rewrites

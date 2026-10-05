@@ -1,0 +1,32 @@
+name: sync version
+description: apps/otenki/package.json と bun.lock を指定の版に合わせる
+
+inputs:
+  version:
+    description: "v を除いた版（例: 0.1.2）"
+    required: true
+
+runs:
+  using: composite
+  steps:
+    # package.json 全体を書き戻すと整形が波及する。version の行だけ直す。
+    - name: set the version in package.json
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+        pkg=apps/otenki/package.json
+        before="$(jq -r .version < "$pkg")"
+        sed -i "0,/\"version\": \"[^\"]*\"/s//\"version\": \"${VERSION}\"/" "$pkg"
+        after="$(jq -r .version < "$pkg")"
+        if [ "$after" != "$VERSION" ]; then
+          echo "::error::could not set ${pkg} to ${VERSION} (still ${after})"
+          exit 1
+        fi
+        echo "${pkg}: ${before} -> ${after}"
+
+    # bun.lock にも版が書いてある。書き換えは bun に任せる。
+    - name: refresh bun.lock
+      shell: bash
+      run: bun install --lockfile-only
