@@ -1,6 +1,15 @@
 import { defineConfig } from "vitepress";
 
 /**
+ * ローカルは / に置く。Pages へ出すときは project site のパスなので
+ * /otenki/ を DOCS_BASE で渡す。CI 側は workflow が設定する。
+ *
+ * `head` の href/src は VitePress が base 付きで書き換えないので、
+ * head に入るパス (favicon など) は自前で prefix する。
+ */
+const base = process.env.DOCS_BASE ?? "/";
+
+/**
  * otenki ドキュメントサイト。
  *
  * 配色は CLI 側 (apps/otenki/src/style.ts) から持ってきた。
@@ -17,12 +26,13 @@ export default defineConfig({
   lastUpdated: true,
   ignoreDeadLinks: false,
 
-  // ローカルは指定なしで / に置く。Pages へ出すときは project site の
-  // パスなので /otenki/ を DOCS_BASE で渡す。CI 側は workflow が設定する。
-  base: process.env.DOCS_BASE ?? "/",
+  base,
 
   head: [
-    ["link", { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" }],
+    [
+      "link",
+      { rel: "icon", type: "image/svg+xml", href: `${base}favicon.svg` },
+    ],
     ["meta", { name: "theme-color", content: "#12141c" }],
     ["meta", { property: "og:type", content: "website" }],
     ["meta", { property: "og:title", content: "otenki" }],
