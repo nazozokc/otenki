@@ -1,31 +1,47 @@
 import Table from "cli-table3";
+import {
+  formatDateTime,
+  formatHumidity,
+  formatPrecipitation,
+  formatTemperature,
+  formatWindSpeed,
+} from "./format.ts";
+import { fetchCurrent } from "./forecast.ts";
+import { resolveLocation } from "./location.ts";
+import { bold, dim, heading, temperature } from "./style.ts";
 import { weatherIcon } from "./weather.icon.ts";
+import { weatherLabel } from "./weather.label.ts";
 
-type WeatherData = {
-  current: {
-    temperature_2m: number;
-    weather_code: number;
-    wind_speed_10m: number;
-    time: string;
-  };
-};
+export const today = async (
+  args: string[],
+  options: { json?: boolean },
+): Promise<void> => {
+  const location = await resolveLocation(args);
+  const current = await fetchCurrent(location.latitude, location.longitude);
 
-export const today = async (Ido: number, Keido: number): Promise<void> => {
-  const response = await fetch(
-    `https://api.open-meteo.com/v1/forecast?latitude=${Ido}&longitude=${Keido}&current=temperature_2m,weather_code,wind_speed_10m&timezone=Asia%2FTokyo`,
+  if (options.json === true) {
+    console.log(JSON.stringify({ location, ...current }, null, 2));
+    return;
+  }
+
+  console.log(
+    `${weatherIcon(current.weatherCode)} ${temperature(formatTemperature(current.temperature))}  ${bold(location.label)}`,
+  );
+  console.log(
+    dim(
+      `${formatDateTime(current.time)} · 体感 ${formatTemperature(current.apparentTemperature)} · 風 ${formatWindSpeed(current.windSpeed)} · 湿度 ${formatHumidity(current.humidity)} · 降水 ${formatPrecipitation(current.precipitation)}`,
+    ),
   );
 
-  const data = (await response.json()) as WeatherData;
-
   const table = new Table({
-    head: ["time", "temp", "weather", "wind_speed"],
+    head: ["time", "temp", "weather", "wind_speed"].map(heading),
   });
 
   table.push([
-    data.current.time,
-    `${data.current.temperature_2m}°C`,
-    weatherIcon(data.current.weather_code),
-    `${data.current.wind_speed_10m} km/h`,
+    current.time,
+    formatTemperature(current.temperature),
+    `${weatherIcon(current.weatherCode)} ${weatherLabel(current.weatherCode)}`,
+    formatWindSpeed(current.windSpeed),
   ]);
 
   console.log(table.toString());

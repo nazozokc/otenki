@@ -8,7 +8,7 @@ export const weatherIcon = (weatherCode: number): string => {
   if ([71, 73, 75, 77].includes(weatherCode)) return "🌨️";
   if ([80, 81, 82].includes(weatherCode)) return "🌦️";
   if ([85, 86].includes(weatherCode)) return "🌨️";
-  if ([95, 96, 99].includes(weatherCode)) return "⛈️";
+  if ([95, 96, 97, 99].includes(weatherCode)) return "⛈️";
 
   return "❓";
 };
