@@ -84,8 +84,8 @@ gives plain text.
 ```
 otenki today 函館
   │
-  ├─ Geocoding API ── 函館 / 函館県 / 函館都 / 函館府 / 函館市 / 函館町 / 函館村
-  │                          ranked by feature code, then population
+  ├─ Geocoding API ── 函館
+  │                   ranked by feature code, then population
   │                   → 41.77583, 140.73666
   │
   └─ Weather API ──── current weather for those coordinates
