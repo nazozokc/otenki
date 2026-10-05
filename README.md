@@ -14,6 +14,9 @@ $ otenki today 函館
 2026-10-04 22:45 · 体感 12.1°C · 風 9.1 km/h · 湿度 72% · 降水 0.0 mm
 ```
 
+Full documentation: <https://nazozokc.github.io/otenki/> — sources in
+[`docs/`](docs/), built with VitePress (`cd docs && bun run dev`).
+
 ## Install
 
 With Nix, from a checkout:

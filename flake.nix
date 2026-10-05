@@ -278,6 +278,8 @@
               "**/dist"
               # node_modules は install の生成物
               "**/node_modules"
+              # VitePress が作る依存の predeps キャッシュ。生成物なので触らない
+              "**/.vitepress/cache"
             ];
           };
         };

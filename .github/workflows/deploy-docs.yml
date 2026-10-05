@@ -1,0 +1,61 @@
+name: deploy-docs
+
+on:
+  push:
+    branches: [main]
+    # docs/ とこのファイルだけを見る。docs 以外を直して main に入れても
+    # 起動しないので、再実行は workflow_dispatch を使う。
+    paths:
+      - docs/**
+      - .github/workflows/deploy-docs.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同じブランチへ続けて push したら、古いビルドは捨てて最新だけを残す。
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # devShell の bun と同じ版に固定する。latest だと breaking change を踏む。
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+
+      - name: install
+        working-directory: docs
+        run: bun install --frozen-lockfile
+
+      - name: build
+        working-directory: docs
+        run: bun run build
+        env:
+          # project site なので /otenki/ が base になる。
+          # ローカルは base を渡さないので / で動く。
+          DOCS_BASE: /otenki/
+
+      - uses: actions/configure-pages@v6
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: docs/docs/.vitepress/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: deploy
+        id: deployment
+        uses: actions/deploy-pages@v5

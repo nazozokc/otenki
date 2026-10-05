@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 372" role="img" aria-label="otenki の出力例">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1d27" />
+      <stop offset="1" stop-color="#11131a" />
+    </linearGradient>
+  </defs>
+
+  <rect x="0.5" y="0.5" width="639" height="371" rx="14" fill="url(#sky)" stroke="#2b303d" />
+  <path d="M0.5 40.5h639" stroke="#2b303d" />
+  <rect x="0.5" y="0.5" width="639" height="40" rx="14" fill="#171a23" />
+  <rect x="0.5" y="28" width="639" height="12" fill="#171a23" />
+
+  <circle cx="24" cy="20" r="5" fill="#f7768e" />
+  <circle cx="42" cy="20" r="5" fill="#e0af68" />
+  <circle cx="60" cy="20" r="5" fill="#7aa2f7" />
+  <text x="320" y="24" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" fill="#6b7280">otenki — 78×14</text>
+
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12.5" xml:space="preserve">
+    <text x="24" y="72" fill="#7aa2f7">$</text>
+    <text x="40" y="72" fill="#c0caf5">otenki today 函館</text>
+
+    <text x="24" y="102" fill="#ff9e64">☀️ 13.8°C</text>
+    <text x="128" y="102" fill="#ffffff">函館市 北海道</text>
+    <text x="24" y="122" fill="#8a8a8a">2026-10-04 22:45 · 体感 12.1°C · 風 9.1 km/h · 湿度 72% · 降水 0.0 mm</text>
+
+    <text x="24" y="164" fill="#7aa2f7">$</text>
+    <text x="40" y="164" fill="#c0caf5">otenki weekly 横浜</text>
+
+    <text x="24" y="194" fill="#ffffff">横浜市 神奈川県</text>
+    <text x="140" y="194" fill="#8a8a8a">— 7日間予報</text>
+
+    <text x="24" y="220" fill="#7aa2f7">date       icon  weather          temp                 precip  prob    wind</text>
+    <text x="24" y="242" fill="#d5d8e0">10-05 (火) 🌦️    晴れ時々くもり    16.1°C ~ 22.4°C      0.4 mm   30%   12.3 km/h</text>
+    <text x="24" y="264" fill="#d5d8e0">10-06 (水) 🌧️    雨               14.8°C ~ 19.2°C      8.1 mm   80%   18.7 km/h</text>
+    <text x="24" y="286" fill="#d5d8e0">10-07 (木) ☀️    快晴             15.0°C ~ 21.7°C      0.0 mm   10%    9.4 km/h</text>
+
+    <text x="24" y="326" fill="#7aa2f7">$</text>
+    <text x="40" y="326" fill="#c0caf5">otenki today 35.69,139.69</text>
+    <text x="24" y="350" fill="#8a8a8a">↑ 名前が曖昧でも、座標なら一意に決まる</text>
+  </g>
+</svg>

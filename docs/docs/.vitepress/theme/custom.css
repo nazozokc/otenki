@@ -1,0 +1,142 @@
+/* ------------------------------------------------------------------
+   配色は CLI 側 (apps/otenki/src/style.ts) から持ってきた。
+   brand  = temperature のオレンジ #ff9e64
+   accent = heading のブルー     #7aa2f7
+   ------------------------------------------------------------------ */
+
+:root {
+  --vp-c-brand-1: #c2410c;
+  --vp-c-brand-2: #9a3412;
+  --vp-c-brand-3: #7c2d12;
+  --vp-c-brand-soft: rgb(194 65 12 / 14%);
+
+  --vp-c-tip-1: #1d4ed8;
+  --vp-c-tip-2: #1e40af;
+  --vp-c-tip-3: #1e3a8a;
+  --vp-c-tip-soft: rgb(29 78 216 / 14%);
+
+  --vp-c-warning-1: #b45309;
+  --vp-c-warning-2: #92400e;
+  --vp-c-warning-3: #78350f;
+  --vp-c-warning-soft: rgb(180 83 9 / 14%);
+
+  --vp-c-danger-1: #b91c1c;
+  --vp-c-danger-2: #991b1b;
+  --vp-c-danger-3: #7f1d1d;
+  --vp-c-danger-soft: rgb(185 28 28 / 14%);
+
+  --vp-c-indigo-1: #4f46e5;
+  --vp-c-indigo-2: #4338ca;
+  --vp-c-indigo-3: #3730a3;
+  --vp-c-indigo-soft: rgb(79 70 229 / 14%);
+
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(120deg, #ff9e64, #f7768e);
+  --vp-home-hero-image-background-image: none;
+  --vp-home-hero-image-filter: none;
+
+  --vp-font-family-base:
+    ui-sans-serif, system-ui, "Hiragino Kaku Gothic ProN", "Noto Sans JP",
+    "Yu Gothic UI", Meiryo, sans-serif;
+  --vp-font-family-mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "JetBrains Mono",
+    "Cascadia Code", monospace;
+}
+
+.dark {
+  --vp-c-brand-1: #ff9e64;
+  --vp-c-brand-2: #f7b083;
+  --vp-c-brand-3: #d98b5a;
+  --vp-c-brand-soft: rgb(255 158 100 / 16%);
+
+  --vp-c-tip-1: #7aa2f7;
+  --vp-c-tip-2: #93b4f8;
+  --vp-c-tip-3: #6f8fd6;
+  --vp-c-tip-soft: rgb(122 162 247 / 16%);
+
+  --vp-c-warning-1: #e0af68;
+  --vp-c-warning-2: #d9a45c;
+  --vp-c-warning-3: #b98a48;
+  --vp-c-warning-soft: rgb(224 175 104 / 16%);
+
+  --vp-c-danger-1: #f7768e;
+  --vp-c-danger-2: #e5667c;
+  --vp-c-danger-3: #c2556a;
+  --vp-c-danger-soft: rgb(247 118 142 / 16%);
+
+  --vp-c-indigo-1: #bb9af7;
+  --vp-c-indigo-2: #a98ff0;
+  --vp-c-indigo-3: #9a7ee0;
+  --vp-c-indigo-soft: rgb(187 154 247 / 16%);
+}
+
+::selection {
+  background: rgb(255 158 100 / 28%);
+}
+
+/* ------------------------------------------------------------------
+   コードブロックは「端末」に寄せる。ラベルはそのまま言語名として出す。
+   ------------------------------------------------------------------ */
+
+/* 背景はテーマ既定（var(--vp-c-bg-alt)）に任せる。 */
+.vp-doc div[class*="language-"] pre {
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 10px;
+}
+
+.vp-doc div[class*="language-"] > span.lang {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+/* Disable ligatures so code is read exactly as written. */
+.vp-doc div[class*="language-"] code {
+  font-variant-ligatures: none;
+}
+
+/* ------------------------------------------------------------------
+   トップページ
+   ------------------------------------------------------------------ */
+
+.VPHero .text {
+  max-width: 36rem;
+}
+
+.VPHero .actions {
+  gap: 12px;
+}
+
+/* ヒーローのスクリーンショットを大きめに。 */
+.VPHero .VPImage {
+  max-width: 520px;
+}
+
+/* ------------------------------------------------------------------
+   段落・表・details の見た目をそろえる
+   ------------------------------------------------------------------ */
+
+.vp-doc table {
+  display: table;
+  width: 100%;
+  font-size: 14px;
+}
+
+.vp-doc th {
+  background-color: var(--vp-c-bg-soft);
+}
+
+.vp-doc td code,
+.vp-doc th code {
+  font-size: 0.9em;
+}
+
+.vp-doc details summary {
+  font-weight: 600;
+}
+
+/* 目次の現在地を強調する。 */
+.VPDocAsideOutline .outline-link.active {
+  font-weight: 600;
+}
