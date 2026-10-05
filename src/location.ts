@@ -24,9 +24,7 @@ const isNumber = (value: string | undefined): value is string =>
  * name (`函館`, `横浜市 神奈川`). A lone number is rejected: `otenki today 41`
  * is far more likely a typo than a latitude.
  */
-export const resolveLocation = async (
-  args: string[],
-): Promise<Location> => {
+export const resolveLocation = async (args: string[]): Promise<Location> => {
   const query = args.join(" ").trim();
 
   if (args.length === 1 && args[0]?.includes(",") === true) {

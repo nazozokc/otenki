@@ -6,14 +6,19 @@ import {
   formatTemperatureRange,
   formatWindSpeed,
 } from "./format.ts";
-import { fetchDaily, MAX_FORECAST_DAYS, type DailyWeather } from "./forecast.ts";
+import {
+  fetchDaily,
+  MAX_FORECAST_DAYS,
+  type DailyWeather,
+} from "./forecast.ts";
 import { resolveLocation } from "./location.ts";
-import { bold, dim, heading, temperature } from "./style.ts";
+import { bold, dim, heading, temperature, tableStyle } from "./style.ts";
 import { weatherIcon } from "./weather.icon.ts";
 import { weatherLabel } from "./weather.label.ts";
 
 const renderTable = (days: DailyWeather[]): string => {
   const table = new Table({
+    style: tableStyle(),
     head: ["date", "icon", "weather", "temp", "precip", "prob", "wind"].map(
       heading,
     ),
@@ -24,7 +29,9 @@ const renderTable = (days: DailyWeather[]): string => {
       formatDay(day.time),
       weatherIcon(day.weatherCode),
       weatherLabel(day.weatherCode),
-      temperature(formatTemperatureRange(day.temperatureMin, day.temperatureMax)),
+      temperature(
+        formatTemperatureRange(day.temperatureMin, day.temperatureMax),
+      ),
       formatPrecipitation(day.precipitationSum),
       formatPrecipitationProbability(day.precipitationProbabilityMax),
       formatWindSpeed(day.windSpeedMax),

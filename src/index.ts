@@ -81,8 +81,7 @@ program.parseAsync(process.argv).catch((failure: unknown) => {
     process.exit(1);
   }
 
-  const message =
-    failure instanceof Error ? failure.message : String(failure);
+  const message = failure instanceof Error ? failure.message : String(failure);
 
   console.error(styleError(`✗ ${message}`));
   process.exit(1);

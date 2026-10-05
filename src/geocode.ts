@@ -39,7 +39,7 @@ export class GeocodeError extends Error {
     super(message);
     this.name = "GeocodeError";
   }
-};
+}
 
 /** GeoNames feature codes: populated places are what a weather lookup wants. */
 const FEATURE_RANK: Record<string, number> = {
@@ -148,4 +148,6 @@ export const geocodeOne = async (query: string): Promise<GeocodeResult> => {
 };
 
 export const placeLabel = (place: GeocodeResult): string =>
-  [place.name, place.admin1].filter((part) => part !== undefined && part !== "").join(" ");
+  [place.name, place.admin1]
+    .filter((part) => part !== undefined && part !== "")
+    .join(" ");

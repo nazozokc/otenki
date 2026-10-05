@@ -141,10 +141,7 @@ export const fetchDaily = async (
     temperatureMax: at(daily.temperature_2m_max, index),
     temperatureMin: at(daily.temperature_2m_min, index),
     precipitationSum: at(daily.precipitation_sum, index),
-    precipitationProbabilityMax: at(
-      daily.precipitation_probability_max,
-      index,
-    ),
+    precipitationProbabilityMax: at(daily.precipitation_probability_max, index),
     windSpeedMax: at(daily.wind_speed_10m_max, index),
   }));
 };

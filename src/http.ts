@@ -24,7 +24,9 @@ const sleep = (ms: number): Promise<void> =>
  * network errors, timeouts and 5xx, but never a 4xx, which will never start working.
  */
 export const fetchJson = async <T>(url: URL, retries = 1): Promise<T> => {
-  let lastError: unknown = new Error(`${url.host} へのリクエストに失敗しました`);
+  let lastError: unknown = new Error(
+    `${url.host} へのリクエストに失敗しました`,
+  );
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     let response: Response | null = null;

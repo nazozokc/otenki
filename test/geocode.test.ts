@@ -1,5 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { candidateQueries, rankCandidates, type GeocodeResult } from "../src/geocode.ts";
+import {
+  candidateQueries,
+  rankCandidates,
+  type GeocodeResult,
+} from "../src/geocode.ts";
 
 const place = (over: Partial<GeocodeResult>): GeocodeResult => ({
   id: 1,
@@ -69,7 +73,12 @@ describe("rankCandidates", () => {
   test("prefers a populated place over a park or station", () => {
     const ranked = rankCandidates([
       place({ id: 1, name: "函館市市民の森", feature_code: "PRK" }),
-      place({ id: 2, name: "函館市", feature_code: "PPLA2", population: 275730 }),
+      place({
+        id: 2,
+        name: "函館市",
+        feature_code: "PPLA2",
+        population: 275730,
+      }),
     ]);
 
     expect(ranked[0]?.name).toBe("函館市");
@@ -101,7 +110,12 @@ describe("rankCandidates", () => {
 
   test("ranks a capital above a same-named ordinary city", () => {
     const ranked = rankCandidates([
-      place({ id: 1, name: "ボーン", feature_code: "PPLA", population: 900000 }),
+      place({
+        id: 1,
+        name: "ボーン",
+        feature_code: "PPLA",
+        population: 900000,
+      }),
       place({ id: 2, name: "ボーン", feature_code: "PPLC", population: 100 }),
     ]);
 

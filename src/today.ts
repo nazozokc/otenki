@@ -8,7 +8,7 @@ import {
 } from "./format.ts";
 import { fetchCurrent } from "./forecast.ts";
 import { resolveLocation } from "./location.ts";
-import { bold, dim, heading, temperature } from "./style.ts";
+import { bold, dim, heading, temperature, tableStyle } from "./style.ts";
 import { weatherIcon } from "./weather.icon.ts";
 import { weatherLabel } from "./weather.label.ts";
 
@@ -34,6 +34,7 @@ export const today = async (
   );
 
   const table = new Table({
+    style: tableStyle(),
     head: ["time", "temp", "weather", "wind_speed"].map(heading),
   });
 

@@ -58,7 +58,7 @@
               let
                 rel = pkgs.lib.removePrefix (toString ./. + "/") (toString path);
               in
-              builtins.match "^(flake|package|tsconfig).*|^bun.nix$|^README.md$|^LICENSE$" rel != null
+              builtins.match "^(flake|package|tsconfig).*|^bun\\.(nix|lock)$|^README.md$|^LICENSE$" rel != null
               || builtins.match "^src(/.*)?$" rel != null
               || builtins.match "^test(/.*)?$" rel != null;
           };
@@ -70,12 +70,6 @@
           # bunInstallFlagsArray は Nix のリストだと bash 配列として復元されず
           # 1 要素扱いになるため、スペース区切りの文字列で渡す
           bunFlags = "--linker=isolated --offline --frozen-lockfile";
-          # buildPhase より先に bun install を走らせる必要がある derivation 向け
-          installDeps = ''
-            runHook preBuild
-            bun install
-            runHook postBuild
-          '';
         in
         {
           # -----------------------------------------------------------------
@@ -174,7 +168,10 @@
               chmod -R u+rwx "$BUN_INSTALL_CACHE_DIR"
             '';
 
-            buildPhase = installDeps;
+            # bun2nix の hook が configurePhase のあとに
+            # bunNodeModulesInstallPhase を挿入するので、ここでは何もしなくてよい。
+            # bun install を自分で書くと --offline / --frozen-lockfile を失って
+            # sandbox 内でネットワークを訪れてしまう。
 
             checkPhase = ''
               runHook preCheck
@@ -207,8 +204,6 @@
             postBunSetInstallCacheDirPhase = ''
               chmod -R u+rwx "$BUN_INSTALL_CACHE_DIR"
             '';
-
-            buildPhase = installDeps;
 
             checkPhase = ''
               runHook preCheck

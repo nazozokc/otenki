@@ -1,7 +1,7 @@
 import Table from "cli-table3";
 import { formatCoordinate } from "./format.ts";
 import { geocode, placeLabel, type GeocodeResult } from "./geocode.ts";
-import { bold, dim, heading, temperature } from "./style.ts";
+import { bold, dim, heading, temperature, tableStyle } from "./style.ts";
 
 const population = (place: GeocodeResult): string =>
   place.population === null || place.population === undefined
@@ -13,13 +13,16 @@ const detail = (place: GeocodeResult): string =>
     place.feature_code,
     place.admin1,
     place.country,
-    place.elevation === undefined ? null : `標高${Math.round(place.elevation)}m`,
+    place.elevation === undefined
+      ? null
+      : `標高${Math.round(place.elevation)}m`,
   ]
     .filter((part) => part !== null && part !== undefined && part !== "")
     .join(" · ");
 
 const renderTable = (places: GeocodeResult[]): string => {
   const table = new Table({
+    style: tableStyle(),
     head: ["name", "admin1", "lat", "lon", "feature", "pop"].map(heading),
   });
 
@@ -101,7 +104,10 @@ const pickWithFzf = async (
 };
 
 const hasFzf = async (): Promise<boolean> => {
-  const child = Bun.spawn(["fzf", "--version"], { stdout: "ignore", stderr: "ignore" });
+  const child = Bun.spawn(["fzf", "--version"], {
+    stdout: "ignore",
+    stderr: "ignore",
+  });
   return (await child.exited) === 0;
 };
 

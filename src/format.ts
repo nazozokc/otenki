@@ -5,10 +5,8 @@ type Maybe = number | null | undefined;
 const isMissing = (value: Maybe): value is null | undefined =>
   value === null || value === undefined || Number.isNaN(value);
 
-export const formatCoordinate = (
-  latitude: number,
-  longitude: number,
-): string => `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+export const formatCoordinate = (latitude: number, longitude: number): string =>
+  `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
 
 export const formatTemperature = (value: Maybe): string =>
   isMissing(value) ? "-" : `${value.toFixed(1)}°C`;
