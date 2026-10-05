@@ -148,7 +148,9 @@ export default defineConfig({
 
     lastUpdatedText: "最終更新",
     editLink: {
-      pattern: "https://github.com/nazozokc/otenki/edit/main/docs/:path",
+      // `:path` は VitePress のルート (docs/docs/) からの相対なので、
+      // リポジトリ内の実パス docs/docs/:path になる。
+      pattern: "https://github.com/nazozokc/otenki/edit/main/docs/docs/:path",
       text: "GitHub で編集",
     },
 
