@@ -1,7 +1,7 @@
-import Table from "cli-table3";
 import { formatCoordinate } from "./format.ts";
 import { geocode, placeLabel, type GeocodeResult } from "./geocode.ts";
-import { bold, dim, heading, temperature, tableStyle } from "./style.ts";
+import { bold, dim, temperature } from "./style.ts";
+import { renderTable, type Column } from "./table.ts";
 
 const population = (place: GeocodeResult): string =>
   place.population === null || place.population === undefined
@@ -20,25 +20,28 @@ const detail = (place: GeocodeResult): string =>
     .filter((part) => part !== null && part !== undefined && part !== "")
     .join(" · ");
 
-const renderTable = (places: GeocodeResult[]): string => {
-  const table = new Table({
-    style: tableStyle(),
-    head: ["name", "admin1", "lat", "lon", "feature", "pop"].map(heading),
-  });
+/** Names and codes read left to right; the three measurements line up on the right. */
+const COLUMNS: Column[] = [
+  { header: "name" },
+  { header: "admin1" },
+  { header: "lat", align: "right" },
+  { header: "lon", align: "right" },
+  { header: "feature" },
+  { header: "pop", align: "right" },
+];
 
-  for (const place of places) {
-    table.push([
+const renderPlaces = (places: GeocodeResult[]): string =>
+  renderTable(
+    COLUMNS,
+    places.map((place) => [
       place.name,
       place.admin1 ?? "-",
       place.latitude.toFixed(5),
       place.longitude.toFixed(5),
       place.feature_code ?? "-",
       population(place),
-    ]);
-  }
-
-  return table.toString();
-};
+    ]),
+  );
 
 const adminLine = (place: GeocodeResult): string =>
   [place.admin1, place.country]
@@ -151,6 +154,6 @@ export const locate = async (
 
   if (options.all === true && places.length > 1) {
     console.log("");
-    console.log(renderTable(places));
+    console.log(renderPlaces(places));
   }
 };

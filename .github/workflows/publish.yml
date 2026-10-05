@@ -1,0 +1,181 @@
+name: publish
+
+# 配布は「package.json が唯一のバージョン情報源」という原則に従う。
+# apps/otenki/package.json を bump して main へ入れたあと、
+#   git tag v$(jq -r .version < apps/otenki/package.json) && git push origin v...
+# を打つとこの workflow が走る。version を一致させないので、その一行で済む。
+on:
+  push:
+    tags: ["v*"]
+  # タグは既に pushed 済みで、この release の再実行だけしたいとき用。
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "既存のタグ（例: v0.1.0）"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+# 取消しはしない。publish は 2 系統（GitHub Release / npm）に分かれるので、
+# 片方だけ止めて片方が進むより、タグを消して初めからやり直す。
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  WORKDIR: apps/otenki
+
+jobs:
+  resolve:
+    name: resolve version
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.pick.outputs.tag }}
+      version: ${{ steps.pick.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # dispatch では明示のタグを、push では飛んできたタグを使う。どちらも
+          # バージョンを読むのは「そのタグの commit」の package.json に対して。
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: pick the tag
+        id: pick
+        run: |
+          # push では ref が tag を指す。dispatch では入力を使う。
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            tag="${{ inputs.tag }}"
+          else
+            tag="${GITHUB_REF_NAME}"
+          fi
+
+          version="$(jq -r .version < "${WORKDIR}/package.json")"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: check the tag against package.json
+        run: |
+          if [ "${{ steps.pick.outputs.tag }}" != "v${{ steps.pick.outputs.version }}" ]; then
+            echo "::error::tag ${{ steps.pick.outputs.tag }} does not match ${WORKDIR}/package.json version ${{ steps.pick.outputs.version }}"
+            exit 1
+          fi
+
+  # publish の前に必ずここを通す。テストが落ちていない npm tarball を作らない。
+  build:
+    needs: resolve
+    name: build and test the tarball
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # resolve と同じ commit を切り出す。dispatch でも main ではなく
+          # タグの package.json に対して publish する。
+          ref: ${{ inputs.tag || github.ref }}
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          # devShell / ci.yml / deploy-docs.yml と同じ版に揃える。
+          bun-version: 1.4.2
+
+      - name: install
+        run: bun install --frozen-lockfile
+
+      - name: typecheck and test
+        working-directory: ${{ env.WORKDIR }}
+        run: bun run typecheck && bun test
+
+      # files フィールドが効いているかの確認も兼ねる。tarball に test/ や
+      # tsconfig.json が入っていたら、ここで落とす。
+      - name: pack
+        id: pack
+        working-directory: ${{ env.WORKDIR }}
+        run: |
+          npm pack --pack-destination "$RUNNER_TEMP"
+          echo "tarball=$(ls "$RUNNER_TEMP"/otenki-*.tgz)" >> "$GITHUB_OUTPUT"
+
+      # 取り出した tarball を実際に起動する。npm が bin に exec bit を付けることと、
+      # version.ts が ../package.json を読んで版を出せることを確認する。
+      - name: smoke test the packed tarball
+        run: |
+          npm install -g --prefix "$RUNNER_TEMP/prefix" "${{ steps.pack.outputs.tarball }}"
+          "$RUNNER_TEMP/prefix/bin/otenki" --version
+          "$RUNNER_TEMP/prefix/bin/otenki" --help > /dev/null
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: npm-tarball
+          path: ${{ steps.pack.outputs.tarball }}
+          if-no-files-found: error
+
+  release:
+    needs: [resolve, build]
+    name: github release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: npm-tarball
+          path: ${{ runner.temp }}
+
+      # 既に release がある（同じタグを再 dispatch した）ときは --clobber で
+      # 添付と notes を置き換える。なければ新規に作る。
+      - name: create the release
+        run: |
+          args=(--title "${{ needs.resolve.outputs.tag }}" --generate-notes)
+          if gh release view "${{ needs.resolve.outputs.tag }}" > /dev/null 2>&1; then
+            args+=(--clobber)
+          fi
+          gh release create "${{ needs.resolve.outputs.tag }}" \
+            "${args[@]}" \
+            "${{ runner.temp }}/otenki-${{ needs.resolve.outputs.version }}.tgz"
+
+  npm:
+    needs: [resolve, build]
+    name: npm publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # --provenance は OIDC で署名を取り直すため、この権限が無いと publish が
+      # 失敗する。long-lived token ではなく、短命の identity で証明される。
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # resolve と同じ commit を切り出す。dispatch でも main ではなく
+          # タグの package.json に対して publish する。
+          ref: ${{ inputs.tag || github.ref }}
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+
+      # job の if: では secrets コンテキストが使えない（actionlint が指摘する）。
+      # 判定は step に落とす。NPM_TOKEN は secret で持つ。token が未設定なら
+      # npm だけを飛ばして GitHub Release は出す。OIDC 認証（trusted publishing）
+      # へ移すには npmjs.com 側で workflow 名を登録し、この判定ごと消す。
+      - name: check for the npm token
+        id: token
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::NPM_TOKEN is not set, so the npm publish is skipped."
+          else
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: publish
+        if: steps.token.outputs.found == 'true'
+        working-directory: ${{ env.WORKDIR }}
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

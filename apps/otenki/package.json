@@ -12,17 +12,34 @@
     "url": "https://github.com/nazozokc"
   },
   "type": "module",
+  "files": [
+    "src",
+    "README.md"
+  ],
   "scripts": {
     "build": "bun build ./src/index.ts --outfile ./dist/otenki.js --target bun",
     "test": "bun test",
     "typecheck": "tsc --project tsconfig.json --noEmit",
-    "start": "bun run src/index.ts"
+    "start": "bun run src/index.ts",
+    "prepublishOnly": "bun run typecheck && bun test"
   },
-  "peerDependencies": {
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nazozokc/otenki.git"
+  },
+  "homepage": "https://nazozokc.github.io/otenki/",
+  "bugs": {
+    "url": "https://github.com/nazozokc/otenki/issues"
+  },
+  "keywords": [
+    "weather",
+    "cli",
+    "terminal",
+    "forecast",
+    "open-meteo",
+    "japan"
+  ],
+  "devDependencies": {
     "typescript": "^7"
-  },
-  "dependencies": {
-    "cli-table3": "^0.6.5",
-    "commander": "^15.0.0"
   }
 }

@@ -1,4 +1,3 @@
-import Table from "cli-table3";
 import {
   formatDay,
   formatPrecipitation,
@@ -12,20 +11,26 @@ import {
   type DailyWeather,
 } from "./forecast.ts";
 import { resolveLocation } from "./location.ts";
-import { bold, dim, heading, temperature, tableStyle } from "./style.ts";
+import { bold, dim, temperature } from "./style.ts";
+import { renderTable, type Column } from "./table.ts";
 import { weatherIcon } from "./weather.icon.ts";
 import { weatherLabel } from "./weather.label.ts";
 
-const renderTable = (days: DailyWeather[]): string => {
-  const table = new Table({
-    style: tableStyle(),
-    head: ["date", "icon", "weather", "temp", "precip", "prob", "wind"].map(
-      heading,
-    ),
-  });
+/** Every measurement is a number, so every column but the first three is right aligned. */
+const COLUMNS: Column[] = [
+  { header: "date" },
+  { header: "icon" },
+  { header: "weather" },
+  { header: "temp", align: "right" },
+  { header: "precip", align: "right" },
+  { header: "prob", align: "right" },
+  { header: "wind", align: "right" },
+];
 
-  for (const day of days) {
-    table.push([
+const renderForecast = (days: DailyWeather[]): string =>
+  renderTable(
+    COLUMNS,
+    days.map((day) => [
       formatDay(day.time),
       weatherIcon(day.weatherCode),
       weatherLabel(day.weatherCode),
@@ -35,11 +40,8 @@ const renderTable = (days: DailyWeather[]): string => {
       formatPrecipitation(day.precipitationSum),
       formatPrecipitationProbability(day.precipitationProbabilityMax),
       formatWindSpeed(day.windSpeedMax),
-    ]);
-  }
-
-  return table.toString();
-};
+    ]),
+  );
 
 /** `tomorrow` reports the second forecast day; day 0 is today. */
 export const tomorrow = async (
@@ -82,7 +84,7 @@ export const weekly = async (
   }
 
   console.log(`${bold(location.label)} ${dim("— 7日間予報")}`);
-  console.log(renderTable(days));
+  console.log(renderForecast(days));
 };
 
 export const monthly = async (
@@ -105,5 +107,5 @@ export const monthly = async (
   console.log(
     `${bold(location.label)} ${dim(`— ${days.length}日間予報 (API上限 ${MAX_FORECAST_DAYS}日)`)}`,
   );
-  console.log(renderTable(days));
+  console.log(renderForecast(days));
 };

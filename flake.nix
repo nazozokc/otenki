@@ -5,7 +5,8 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
     treefmt-nix.url = "github:numtide/treefmt-nix";
-    # bun.lock → bun.nix を生成し、依存を Nix store からオフライン取得する。
+    # bun.lock → bun.nix を生成し、devDependency を Nix store からオフライン取得する。
+    # 成果物とテストは依存 0 なのでこの入力は使わず、checks.typecheck だけが使う。
     # 2.1.2 は lockfileVersion 2 (bun 1.4 の既定) を解釈できないので、
     # 「Accept bun.lock versions 2 and 3」(PR #110) の head を指している。
     # マージ後に 2.1.3 へ上げるか、この rev を外して最新に差し替えること。
@@ -69,7 +70,10 @@
           # apps/otenki/package.json を唯一のバージョン情報源にする
           version = (pkgs.lib.importJSON ./apps/otenki/package.json).version;
           bun2nix' = bun2nix.packages.${system}.bun2nix;
-          # bun.nix から作った bun 互換キャッシュ（sandbox 内のオフライン install 用）
+          # bun.nix から作った bun 互換キャッシュ（sandbox 内のオフライン install 用）。
+          # 型チェックだけが使う: @types/bun は npm から入れないと tsc が Bun の
+          # グローバルを解釈しないため。runtime 依存は 0 なので、成果物のビルドと
+          # テストは node_modules を一切作らない。
           bunDeps = bun2nix'.fetchBunDeps { bunNix = ./bun.nix; };
           # bunInstallFlagsArray は Nix のリストだと bash 配列として復元されず
           # 1 要素扱いになるため、スペース区切りの文字列で渡す
@@ -81,28 +85,22 @@
           # -----------------------------------------------------------------
           packages.default = pkgs.stdenvNoCC.mkDerivation {
             pname = "otenki";
-            inherit src version bunDeps;
+            inherit src version;
 
             nativeBuildInputs = [
               pkgs.bun
               pkgs.makeWrapper
-              bun2nix'.hook
             ];
 
-            dontUseBunBuild = true;
-            dontUseBunCheck = true;
-            bunInstallFlags = bunFlags;
-
-            # bun2nix issue #73: fetchBunDeps のキャッシュをコピーすると
-            # read-only になり、bun がリンクを作れず ENOENT で失敗する。
-            postBunSetInstallCacheDirPhase = ''
-              chmod -R u+rwx "$BUN_INSTALL_CACHE_DIR"
-            '';
-
             # `bun build --compile` は自己完結バイナリ（80MB）を作れるが、
-            # orbase と同じ方針で bundle + makeWrapper を採る（156KB）。
+            # orbase と同じ方針で bundle + makeWrapper を採る（30KB）。
             # bundle は bare import を解決してインライン化するので、
             # 実行時に node_modules は不要。
+            #
+            # runtime 依存が 0 なので `bun install` 自体を走らせない。
+            # node_modules を生成しないぶん、サンドボックスはネットワークを
+            # まったく訪れない。依存定義 (bun.nix) が必要になるのは、
+            # @types/bun を要する型チェックの derivation だけ。
             buildPhase = ''
               runHook preBuild
               bun build ./apps/otenki/src/index.ts --outfile ./otenki.js --target bun
@@ -136,7 +134,9 @@
             program = "${pkgs.lib.getExe self'.packages.default}";
           };
 
-          # bun.lock を更新した後に、依存定義とこのスクリプトを走らせる。
+          # devDependency（@types/bun, typescript）を更新した後に、依存定義とこの
+          # スクリプトを走らせる。成果物とテストは devDependency を見ないので、
+          # これを走らせるのは tsc を Nix 内で回すためだけ。
           # リポジトリのルートで `bun install && nix run .#update` を実行する。
           # writeShellScript は $out そのものがスクリプトファイルのパスに
           # なるので、文字列補間して program に渡す必要がある。
@@ -158,27 +158,13 @@
 
           checks.tests = pkgs.stdenvNoCC.mkDerivation {
             pname = "otenki-tests";
-            inherit src version bunDeps;
+            inherit src version;
 
-            nativeBuildInputs = [
-              pkgs.bun
-              bun2nix'.hook
-            ];
+            nativeBuildInputs = [ pkgs.bun ];
 
-            dontUseBunBuild = true;
-            dontUseBunCheck = true;
             doCheck = true;
-            bunInstallFlags = bunFlags;
 
-            postBunSetInstallCacheDirPhase = ''
-              chmod -R u+rwx "$BUN_INSTALL_CACHE_DIR"
-            '';
-
-            # bun2nix の hook が configurePhase のあとに
-            # bunNodeModulesInstallPhase を挿入するので、ここでは何もしなくてよい。
-            # bun install を自分で書くと --offline / --frozen-lockfile を失って
-            # sandbox 内でネットワークを訪れてしまう。
-
+            # テストは bun:test とソースだけを見るので、install を挟む必要がない。
             checkPhase = ''
               runHook preCheck
               bun test
@@ -194,6 +180,8 @@
 
           checks.typecheck = pkgs.stdenvNoCC.mkDerivation {
             pname = "otenki-typecheck";
+            # ここにだけ bunDeps が入る。tsc が Bun のグローバル型と bun:test を
+            # 解決するため、@types/bun を node_modules に用意する必要がある。
             inherit src version bunDeps;
 
             nativeBuildInputs = [
@@ -211,6 +199,10 @@
               chmod -R u+rwx "$BUN_INSTALL_CACHE_DIR"
             '';
 
+            # bun2nix の hook が configurePhase のあとに
+            # bunNodeModulesInstallPhase を挿入するので、ここでは何もしなくてよい。
+            # bun install を自分で書くと --offline / --frozen-lockfile を失って
+            # sandbox 内でネットワークを訪れてしまう。
             checkPhase = ''
               runHook preCheck
               tsc --project tsconfig.json --noEmit
@@ -257,7 +249,7 @@
               echo "    bun run build               bundle to apps/otenki/dist/otenki.js"
               echo "    bun run start -- <cmd>      run the CLI (dev mode)"
               echo "    nix run . -- <cmd>          run the Nix build"
-              echo "    nix run .#update            refresh bun.nix after bun.lock changes"
+              echo "    nix run .#update            refresh bun.nix after devDependency changes"
               echo "    nix fmt                     format sources"
             '';
           };

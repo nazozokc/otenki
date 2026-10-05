@@ -2,7 +2,7 @@
 
 ## 生 JSON
 
-`today` `tomorrow` `weekly` `monthly` `locate` はすべて `--json` を受け付けます。色も表の罫線も出ないので、他のコマンドへそのまま渡せます。
+`today` `tomorrow` `weekly` `monthly` `locate` はすべて `--json` を受け付けます。色も表の罫線も出ないので、他のコマンドへそのまま渡せます。`--json` は TTY でもパイプでも同じ形なので、端末の設定に左右されません。
 
 ```console
 $ otenki today 函館 --json

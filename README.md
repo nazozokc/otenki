@@ -11,7 +11,7 @@ PPLA2 · 北海道 · 日本 · 標高5m
 
 $ otenki today 函館
 ☀️ 13.8°C  函館市 北海道
-2026-10-04 22:45 · 体感 12.1°C · 風 9.1 km/h · 湿度 72% · 降水 0.0 mm
+2026-10-04 22:45 · 快晴 · 体感 12.1°C · 風 9.1 km/h · 湿度 72% · 降水 0.0 mm
 ```
 
 Full documentation: <https://nazozokc.github.io/otenki/> — sources in
@@ -34,8 +34,10 @@ bun run start -- <command>              # run from source
 (cd apps/otenki && bun link)            # or: put `otenki` on your PATH
 ```
 
-Requires [Bun](https://bun.sh) 1.4+. There is no build step; the `bin` entry runs
-the TypeScript sources directly.
+Requires [Bun](https://bun.sh) 1.4+. The CLI has no runtime dependencies: argument
+parsing and table rendering are in-tree, so `bun install` only fetches TypeScript
+and `@types/bun` for development. There is no build step; the `bin` entry runs the
+TypeScript sources directly.
 
 ## Commands
 
@@ -150,10 +152,42 @@ After changing dependencies, refresh the Nix dependency definition:
 bun install && nix run .#update
 ```
 
-The `bun2nix` input is pinned to the head of
+`nix run .#update` only matters for `checks.typecheck`, which needs `@types/bun` on
+disk; the package and the test check need no `node_modules` at all. The `bun2nix`
+input is pinned to the head of
 [PR #110](https://github.com/nix-community/bun2nix/pull/110), "Accept bun.lock
 versions 2 and 3", because bun 1.4 writes `lockfileVersion: 2` and the 2.1.2
 release cannot read it. Bump the rev once that lands.
+
+Note that `nix build .` snapshots the **git** tree, so new files have to be staged
+before Nix will build them. Use `nix build "path:$PWD"` to build from the working
+directory instead.
+
+## Release
+
+`apps/otenki/package.json` is the only place a version lives — the Nix build reads
+it, and `publish.yml` refuses to publish a tag that disagrees with it. So a
+release is a version bump plus one tag:
+
+```sh
+# 1. bump apps/otenki/package.json, commit, merge to main
+# 2. tag that exact commit and push the tag
+git tag "v$(jq -r .version < apps/otenki/package.json)"
+git push origin v0.1.0        # replace with the version you just tagged
+```
+
+Pushing the tag runs `publish.yml`, which builds and tests the tarball, then
+creates the GitHub Release (notes generated from the commit log, with the npm
+tarball attached) and publishes to npm with provenance. npm is skipped if the
+`NPM_TOKEN` repository secret is not set, so the GitHub Release still lands.
+
+The same tag can be re-run from the Actions tab via `workflow_dispatch`; it
+re-checks out the tagged commit rather than `main`, so a re-run cannot ship a
+version that drifted.
+
+```console
+$ bunx otenki today 函館     # npm 配布（bun が PATH に要る）
+```
 
 ## Special Thanks
 

@@ -1,0 +1,66 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# 読み取りだけで足りる。書き込むのは publish.yml だけ。
+permissions:
+  contents: read
+
+# 同じブランチへ続けて push したら、古いビルドを捨てて最新だけを残す。
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # 素早いフィードバック用。Nix を入れずに Bun だけで完結させる。
+  bun:
+    name: test and typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # devShell の bun と同じ版に固定する。latest だと breaking change を踏む。
+      # nixpkgs が bun を上げたら、ここと deploy-docs.yml も同時に直す。
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+
+      - name: install
+        run: bun install --frozen-lockfile
+
+      - name: test
+        run: bun test
+
+      # 色は TTY でしか出ない。sandbox とローカルで違う結果にならないよう、
+      # 明示的に切って「色が無い状態でも壊れないか」を見る。
+      - name: test without colour
+        env:
+          NO_COLOR: "1"
+        run: bun test
+
+      - name: typecheck
+        run: bun run typecheck
+
+      - name: build
+        run: bun run build
+
+  # 本命のゲート。build / test / typecheck / 整形を全部 Nix の sandbox 内で回す。
+  # ローカルと同じ環境になっていることを保証するのが目的。CI でも必ずこれを通す。
+  nix:
+    name: nix flake check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            accept-flake-config = true
+
+      # checks.build / checks.tests / checks.typecheck / checks.treefmt
+      - name: flake check
+        run: nix flake check --accept-flake-config

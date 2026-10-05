@@ -1,88 +1,88 @@
 #!/usr/bin/env bun
 
-import { Command, InvalidArgumentError } from "commander";
 import { clearCache } from "./cache.ts";
+import { dispatch, type Command, UsageError } from "./cli.ts";
 import { monthly, tomorrow, weekly } from "./daily.ts";
 import { MAX_FORECAST_DAYS } from "./forecast.ts";
 import { locate } from "./locate.ts";
-import { error as styleError } from "./style.ts";
 import { today } from "./today.ts";
 import { version } from "./version.ts";
 
-const program = new Command();
+const json: Command["options"][number] = {
+  flag: "json",
+  description: "print raw JSON",
+};
 
-program
-  .name("otenki")
-  .description("view weather for any place on earth")
-  .version(await version(), "-V, --version", "print the version")
-  .showHelpAfterError();
+const LOCATION = {
+  name: "location",
+  description: "place name or latitude longitude pair",
+};
 
-const withLocation =
-  (run: (args: string[], options: { json?: boolean }) => Promise<void>) =>
-  (args: string[], options: { json?: boolean }): Promise<void> =>
-    run(args, options);
+const commands: Command[] = [
+  {
+    name: "today",
+    description: "current weather",
+    argument: LOCATION,
+    options: [json],
+    run: today,
+  },
+  {
+    name: "tomorrow",
+    description: "tomorrow's weather",
+    argument: LOCATION,
+    options: [json],
+    run: tomorrow,
+  },
+  {
+    name: "weekly",
+    description: "7 day forecast",
+    argument: LOCATION,
+    options: [json],
+    run: weekly,
+  },
+  {
+    name: "monthly",
+    description: `${MAX_FORECAST_DAYS} day forecast (the Forecast API caps forecast_days at ${MAX_FORECAST_DAYS})`,
+    argument: LOCATION,
+    options: [json],
+    run: monthly,
+  },
+  {
+    name: "locate",
+    description: "resolve a place name to latitude and longitude",
+    argument: { name: "place", description: "place name" },
+    options: [
+      {
+        flag: "all",
+        description: "list every candidate the geocoder returned",
+      },
+      {
+        flag: "pick",
+        description: "choose between candidates interactively with fzf",
+      },
+      json,
+    ],
+    run: locate,
+  },
+  {
+    name: "cache",
+    description: "manage the place name cache",
+    options: [{ flag: "clear", description: "drop every cached lookup" }],
+    run: async (_args, flags) => {
+      // A UsageError rather than process.exit: dispatch owns the exit code, and
+      // exiting from inside it would skip the usage line the caller needs here.
+      if (flags.clear !== true) {
+        throw new UsageError("--clear を指定してください");
+      }
 
-program
-  .command("today")
-  .description("current weather")
-  .argument("<location...>", "place name or latitude longitude pair")
-  .option("--json", "print raw JSON")
-  .action(withLocation(today));
+      await clearCache();
+      console.log("キャッシュを消去しました");
+    },
+  },
+];
 
-program
-  .command("tomorrow")
-  .description("tomorrow's weather")
-  .argument("<location...>", "place name or latitude longitude pair")
-  .option("--json", "print raw JSON")
-  .action(withLocation(tomorrow));
-
-program
-  .command("weekly")
-  .description("7 day forecast")
-  .argument("<location...>", "place name or latitude longitude pair")
-  .option("--json", "print raw JSON")
-  .action(withLocation(weekly));
-
-program
-  .command("monthly")
-  .description(
-    `${MAX_FORECAST_DAYS} day forecast (the Forecast API caps forecast_days at ${MAX_FORECAST_DAYS})`,
-  )
-  .argument("<location...>", "place name or latitude longitude pair")
-  .option("--json", "print raw JSON")
-  .action(withLocation(monthly));
-
-program
-  .command("locate")
-  .description("resolve a place name to latitude and longitude")
-  .argument("<place...>", "place name")
-  .option("--all", "list every candidate the geocoder returned")
-  .option("--pick", "choose between candidates interactively with fzf")
-  .option("--json", "print raw JSON")
-  .action(locate);
-
-program
-  .command("cache")
-  .description("manage the place name cache")
-  .option("--clear", "drop every cached lookup")
-  .action(async (options: { clear?: boolean }) => {
-    if (options.clear !== true) {
-      console.error("cache: --clear を指定してください");
-      process.exit(1);
-    }
-
-    await clearCache();
-    console.log("キャッシュを消去しました");
-  });
-
-program.parseAsync(process.argv).catch((failure: unknown) => {
-  if (failure instanceof InvalidArgumentError) {
-    console.error(styleError(`✗ ${failure.message}`));
-    process.exit(1);
-  }
-
-  const message = failure instanceof Error ? failure.message : String(failure);
-
-  console.error(styleError(`✗ ${message}`));
-  process.exit(1);
-});
+process.exitCode = await dispatch(
+  commands,
+  process.argv.slice(2),
+  await version(),
+);

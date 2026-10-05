@@ -1,4 +1,3 @@
-import Table from "cli-table3";
 import {
   formatDateTime,
   formatHumidity,
@@ -8,7 +7,7 @@ import {
 } from "./format.ts";
 import { fetchCurrent } from "./forecast.ts";
 import { resolveLocation } from "./location.ts";
-import { bold, dim, heading, temperature, tableStyle } from "./style.ts";
+import { bold, dim, temperature } from "./style.ts";
 import { weatherIcon } from "./weather.icon.ts";
 import { weatherLabel } from "./weather.label.ts";
 
@@ -27,23 +26,13 @@ export const today = async (
   console.log(
     `${weatherIcon(current.weatherCode)} ${temperature(formatTemperature(current.temperature))}  ${bold(location.label)}`,
   );
+  // One line per fact group rather than a table: a single row of `time`,
+  // `temp`, `weather` and `wind_speed` repeated what the two lines above
+  // already said, and two screens of box drawing for four numbers is a bad
+  // trade in a terminal.
   console.log(
     dim(
-      `${formatDateTime(current.time)} · 体感 ${formatTemperature(current.apparentTemperature)} · 風 ${formatWindSpeed(current.windSpeed)} · 湿度 ${formatHumidity(current.humidity)} · 降水 ${formatPrecipitation(current.precipitation)}`,
+      `${formatDateTime(current.time)} · ${weatherLabel(current.weatherCode)} · 体感 ${formatTemperature(current.apparentTemperature)} · 風 ${formatWindSpeed(current.windSpeed)} · 湿度 ${formatHumidity(current.humidity)} · 降水 ${formatPrecipitation(current.precipitation)}`,
     ),
   );
-
-  const table = new Table({
-    style: tableStyle(),
-    head: ["time", "temp", "weather", "wind_speed"].map(heading),
-  });
-
-  table.push([
-    current.time,
-    formatTemperature(current.temperature),
-    `${weatherIcon(current.weatherCode)} ${weatherLabel(current.weatherCode)}`,
-    formatWindSpeed(current.windSpeed),
-  ]);
-
-  console.log(table.toString());
 };
