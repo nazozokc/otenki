@@ -51,6 +51,7 @@
           pkgs = nixpkgs.legacyPackages.${system};
           # ビルドに必要な物だけをソースに含める。node_modules と dist は
           # ビルド中に作る（あるいは不要）なので除外する。
+          # apps/** だけでワークスペースの中身全部が拾える。
           src = pkgs.lib.cleanSourceWith {
             src = ./.;
             filter =
@@ -59,11 +60,14 @@
                 rel = pkgs.lib.removePrefix (toString ./. + "/") (toString path);
               in
               builtins.match "^(flake|package|tsconfig).*|^bun\\.(nix|lock)$|^README.md$|^LICENSE$" rel != null
-              || builtins.match "^src(/.*)?$" rel != null
-              || builtins.match "^test(/.*)?$" rel != null;
+              || (
+                builtins.match "^apps(/.*)?$" rel != null
+                && builtins.match ".*/node_modules(/.*)?" rel == null
+                && builtins.match "^apps/[^/]+/dist(/.*)?$" rel == null
+              );
           };
-          # package.json を唯一のバージョン情報源にする
-          version = (pkgs.lib.importJSON ./package.json).version;
+          # apps/otenki/package.json を唯一のバージョン情報源にする
+          version = (pkgs.lib.importJSON ./apps/otenki/package.json).version;
           bun2nix' = bun2nix.packages.${system}.bun2nix;
           # bun.nix から作った bun 互換キャッシュ（sandbox 内のオフライン install 用）
           bunDeps = bun2nix'.fetchBunDeps { bunNix = ./bun.nix; };
@@ -101,7 +105,7 @@
             # 実行時に node_modules は不要。
             buildPhase = ''
               runHook preBuild
-              bun build ./src/index.ts --outfile ./otenki.js --target bun
+              bun build ./apps/otenki/src/index.ts --outfile ./otenki.js --target bun
               runHook postBuild
             '';
 
@@ -133,16 +137,18 @@
           };
 
           # bun.lock を更新した後に、依存定義とこのスクリプトを走らせる。
-          # リポジトリのルートで `bun install && nix run .update` を実行する。
+          # リポジトリのルートで `bun install && nix run .#update` を実行する。
+          # writeShellScript は $out そのものがスクリプトファイルのパスに
+          # なるので、文字列補間して program に渡す必要がある。
           apps.update = {
             type = "app";
-            program = pkgs.writeShellScript "otenki-update-bun-nix" ''
+            program = "${pkgs.writeShellScript "otenki-update-bun-nix" ''
               set -euo pipefail
               bun install
               ${pkgs.lib.getExe bun2nix'} -l bun.lock -o bun.nix
               nix flake lock
               echo "bun.nix と flake.lock を更新しました"
-            '';
+            ''}";
           };
 
           # -----------------------------------------------------------------
@@ -248,10 +254,10 @@
               echo "  Tasks:"
               echo "    bun test                    run tests"
               echo "    bun run typecheck           type check"
-              echo "    bun run build               bundle to dist/otenki.js"
-              echo "    bun run src/index.ts <cmd>  run the CLI (dev mode)"
+              echo "    bun run build               bundle to apps/otenki/dist/otenki.js"
+              echo "    bun run start -- <cmd>      run the CLI (dev mode)"
               echo "    nix run . -- <cmd>          run the Nix build"
-              echo "    nix run .update             refresh bun.nix after bun.lock changes"
+              echo "    nix run .#update            refresh bun.nix after bun.lock changes"
               echo "    nix fmt                     format sources"
             '';
           };
@@ -269,7 +275,9 @@
               # bun.nix は bun2nix の生成物なので整形しない
               "bun.nix"
               # dist はビルド生成物
-              "dist"
+              "**/dist"
+              # node_modules は install の生成物
+              "**/node_modules"
             ];
           };
         };

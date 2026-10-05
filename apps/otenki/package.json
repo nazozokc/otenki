@@ -1,0 +1,28 @@
+{
+  "name": "otenki",
+  "version": "0.1.0",
+  "description": "view weather for any place on earth from the terminal",
+  "module": "src/index.ts",
+  "bin": {
+    "otenki": "src/index.ts"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "nazozokc",
+    "url": "https://github.com/nazozokc"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "bun build ./src/index.ts --outfile ./dist/otenki.js --target bun",
+    "test": "bun test",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "start": "bun run src/index.ts"
+  },
+  "peerDependencies": {
+    "typescript": "^7"
+  },
+  "dependencies": {
+    "cli-table3": "^0.6.5",
+    "commander": "^15.0.0"
+  }
+}

@@ -27,7 +27,8 @@ From source:
 
 ```sh
 bun install
-bun link                   # or: bun run src/index.ts <command>
+bun run start -- <command>              # run from source
+(cd apps/otenki && bun link)            # or: put `otenki` on your PATH
 ```
 
 Requires [Bun](https://bun.sh) 1.4+. There is no build step; the `bin` entry runs
@@ -126,19 +127,25 @@ which takes a repeat lookup from about 1.5 s to about 0.08 s.
 
 ## Development
 
+The repository is a Bun workspace: `apps/otenki` holds the CLI, and the root owns
+the shared config, `bun.lock` and the Nix flake.
+
 ```sh
 bun test                    # unit tests, no network
 bun run typecheck           # tsc --noEmit
-bun run build               # bundle to dist/otenki.js
-bun run src/index.ts <cmd>  # run the CLI in dev mode
+bun run build               # bundle to apps/otenki/dist/otenki.js
+bun run start -- <cmd>      # run the CLI in dev mode
 nix flake check             # build, tests and typecheck inside Nix
 nix fmt                     # nixfmt + prettier
 ```
 
+Each root script fans out with `bun run --filter otenki …`; run them from
+`apps/otenki` directly when you want a single app.
+
 After changing dependencies, refresh the Nix dependency definition:
 
 ```sh
-bun install && nix run .update
+bun install && nix run .#update
 ```
 
 The `bun2nix` input is pinned to the head of
