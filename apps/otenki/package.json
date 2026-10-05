@@ -1,5 +1,5 @@
 {
-  "name": "otenki",
+  "name": "@nazozokc-prod/otenki",
   "version": "0.1.0",
   "description": "view weather for any place on earth from the terminal",
   "module": "src/index.ts",
