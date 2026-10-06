@@ -1,6 +1,6 @@
 {
   "name": "@nazozokc-prod/otenki",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "view weather for any place on earth from the terminal",
   "module": "dist/index.mjs",
   "bin": {
