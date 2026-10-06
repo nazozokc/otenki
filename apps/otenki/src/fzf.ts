@@ -1,4 +1,5 @@
 import type { GeocodeResult } from "./geocode.ts";
+import { sanitizeText } from "./sanitize.ts";
 
 /**
  * Everything that talks to fzf: the one line per candidate it is shown, the
@@ -68,7 +69,8 @@ export const pickFromFzf = async (
       "fzf",
       "--reverse",
       "--prompt",
-      `${query} > `,
+      // The query is argv, not geocode output, so it needs its own pass.
+      `${sanitizeText(query)} > `,
       "--height",
       "40%",
       "--info",

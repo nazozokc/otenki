@@ -1,5 +1,6 @@
 import { commandHelp, help } from "./cli.help.ts";
 import { type Command, isFlag, parseArgs, UsageError } from "./cli.parse.ts";
+import { sanitizeText } from "./sanitize.ts";
 import { error as styleError } from "./style.ts";
 
 /**
@@ -25,7 +26,8 @@ export const dispatch = async (
   }
 
   const failUnknown = (name: string): number => {
-    const message = styleError(`✗ unknown command '${name}'`);
+    // The name is argv: strip control sequences before it reaches the terminal.
+    const message = styleError(`✗ unknown command '${sanitizeText(name)}'`);
     console.error(`${message}\n\n${help(commands)}`);
     return 1;
   };
@@ -51,7 +53,7 @@ export const dispatch = async (
   // send the reader looking in the wrong list. The mistake is its position.
   if (isFlag(first)) {
     const message = styleError(
-      `✗ option '${first}' must come after the command`,
+      `✗ option '${sanitizeText(first)}' must come after the command`,
     );
     console.error(`${message}\n\n${help(commands)}`);
     return 1;
@@ -89,8 +91,11 @@ export const dispatch = async (
     await command.run(args, flags);
     return 0;
   } catch (failure: unknown) {
-    const message =
-      failure instanceof Error ? failure.message : String(failure);
+    // The message may echo argv or an API field, so it gets the same pass as
+    // the two above. The usage hint is built from our own text and stays as-is.
+    const message = sanitizeText(
+      failure instanceof Error ? failure.message : String(failure),
+    );
     // The usage only helps when the invocation was wrong. A failed lookup is
     // the weather's fault, and reprinting the manual on top of it is noise.
     const hint = failure instanceof UsageError ? `\n\n${usage}` : "";

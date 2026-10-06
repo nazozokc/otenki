@@ -1,12 +1,23 @@
 import type { GeocodeResult } from "./geocode.ts";
+import { homedir } from "node:os";
+import { isAbsolute } from "node:path";
 
 /**
  * XDG state directory, resolved the same way every other tool does. Kept in
  * `state` rather than `cache` so a cache purge does not silently send the user
  * back to the network for a place they look up every morning.
+ *
+ * `homedir()` instead of `process.env.HOME`: an unset HOME turned
+ * `${HOME}/.local/state` into a relative `undefined/.local/state` path that
+ * landed in whatever directory the command ran in (and once, in git). A
+ * relative XDG_STATE_HOME is ignored per the XDG spec for the same reason.
  */
 const stateDir = (): string => {
-  const home = process.env.XDG_STATE_HOME ?? `${process.env.HOME}/.local/state`;
+  const xdg = process.env.XDG_STATE_HOME;
+  const home =
+    xdg !== undefined && xdg !== "" && isAbsolute(xdg)
+      ? xdg
+      : `${homedir()}/.local/state`;
   return `${home}/otenki`;
 };
 
@@ -20,12 +31,53 @@ type Entry = {
   results: GeocodeResult[];
 };
 
+/**
+ * The cache file lives outside this process's control: a hand-edited or
+ * poisoned entry must degrade to a cache miss, never to a crash or to a
+ * place the user did not ask for. Only the fields consumers read are
+ * checked; optional strings are tolerated as absent rather than audited
+ * one by one.
+ */
+const isEntry = (value: unknown): value is Entry => {
+  if (typeof value !== "object" || value === null) return false;
+  const entry = value as Record<string, unknown>;
+  if (typeof entry.savedAt !== "number" || !Number.isFinite(entry.savedAt)) {
+    return false;
+  }
+  if (!Array.isArray(entry.results)) return false;
+
+  return entry.results.every((result) => {
+    if (typeof result !== "object" || result === null) return false;
+    const place = result as Record<string, unknown>;
+    return (
+      typeof place.name === "string" &&
+      typeof place.latitude === "number" &&
+      Number.isFinite(place.latitude) &&
+      typeof place.longitude === "number" &&
+      Number.isFinite(place.longitude)
+    );
+  });
+};
+
 const readCache = async (): Promise<Record<string, Entry>> => {
   try {
     const file = Bun.file(cacheFile());
     if (!(await file.exists())) return {};
 
-    return (await file.json()) as Record<string, Entry>;
+    const parsed: unknown = await file.json();
+    if (
+      typeof parsed !== "object" ||
+      parsed === null ||
+      Array.isArray(parsed)
+    ) {
+      return {};
+    }
+
+    const valid: Record<string, Entry> = {};
+    for (const [key, value] of Object.entries(parsed)) {
+      if (isEntry(value)) valid[key] = value;
+    }
+    return valid;
   } catch {
     // A corrupt or unreadable cache must never break a lookup.
     return {};

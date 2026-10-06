@@ -1,5 +1,6 @@
 import { cachedGeocode } from "./cache.ts";
 import { fetchJson } from "./http.ts";
+import { sanitizeText } from "./sanitize.ts";
 
 const GEOCODING_ENDPOINT = "https://geocoding-api.open-meteo.com/v1/search";
 
@@ -117,12 +118,35 @@ const search = async (
   return data.results ?? [];
 };
 
+/** Optional string fields: absent stays absent, a non-string is dropped. */
+const clean = (value: unknown): string | undefined =>
+  typeof value === "string" ? sanitizeText(value) : undefined;
+
+/**
+ * Control characters never belong in a place name, but a compromised API or
+ * cache file could carry them, and every consumer prints these fields raw.
+ * Sanitizing at the source covers the table, fzf, labels and JSON alike.
+ */
+const sanitizePlace = (place: GeocodeResult): GeocodeResult => ({
+  ...place,
+  name:
+    typeof place.name === "string"
+      ? sanitizeText(place.name)
+      : String(place.name),
+  feature_code: clean(place.feature_code),
+  country_code: clean(place.country_code),
+  country: clean(place.country),
+  admin1: clean(place.admin1),
+  admin2: clean(place.admin2),
+  timezone: clean(place.timezone),
+});
+
 /** All candidates for a place name, best match first. */
 export const geocode = async (
   query: string,
   count: number = DEFAULT_COUNT,
-): Promise<GeocodeResult[]> =>
-  cachedGeocode(query, async () => {
+): Promise<GeocodeResult[]> => {
+  const results = await cachedGeocode(query, async () => {
     // The variants are independent, so issue them at once rather than paying a
     // round trip each: the full ladder is otherwise up to 14 sequential requests.
     const responses = await Promise.all(
@@ -136,6 +160,11 @@ export const geocode = async (
 
     return rankCandidates([...found.values()]);
   });
+
+  // After the cache, not just after the fetch: a hit returns whatever is on
+  // disk, and disk is outside this process's control.
+  return results.map(sanitizePlace);
+};
 
 /** Best single match. Throws when the name matches nothing. */
 export const geocodeOne = async (query: string): Promise<GeocodeResult> => {

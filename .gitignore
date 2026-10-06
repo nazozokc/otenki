@@ -111,3 +111,6 @@ dist
 
 # TernJS port file
 .tern-port
+
+# cache path from an unset HOME (stateDir now falls back to os.homedir())
+undefined/
