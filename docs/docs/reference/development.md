@@ -2,11 +2,11 @@
 
 ## リポジトリの構成
 
-Bun ワークスペースです。CLI は `apps/otenki` にあり、ルートが設定とロックファイルを持ちます。CLI の runtime 依存は 0 で、`bun install` が拾うのは型検査用の `typescript` と `@types/bun` だけです。
+Bun ワークスペースです。CLI は `apps/otenki` にあり、ルートが設定とロックファイルを持ちます。CLI の runtime 依存は 0 で、`bun install` が拾うのは型検査用の `typescript` と `@types/bun`、ビルド用の `tsdown` だけです。
 
 ```text
 .
-├── apps/otenki/       CLI 本体（bin は src/index.ts を直接指す）
+├── apps/otenki/       CLI 本体（bin は tsdown の成果物 dist/index.mjs を指す）
 ├── docs/              このドキュメントサイト（独立したパッケージ）
 ├── bun.lock           依存のロック
 ├── bun.nix            bun.lock から生成した依存定義（bun2nix の生成物）
@@ -22,7 +22,7 @@ Nix の `src` フィルタは `apps/**` とルートの設定ファイルだけ�
 bun test                    # ユニットテスト。ネットワークに出ない
 bun run typecheck           # tsc --noEmit
 bun run start -- today 函館  # CLI を開発モードで実行
-bun run build               # apps/otenki/dist/otenki.js へバンドル
+bun run build               # apps/otenki/dist/index.mjs へバンドル（tsdown）
 ```
 
 ルートのスクリプトは `bun run --filter otenki …` でアプリ側へ渡します。単体のアプリだけを触るときは `apps/otenki` で直接実行してください。
@@ -51,7 +51,7 @@ bun install && nix run .#update
 
 `nix run .#update` は `bun install` のあと `bun2nix` で `bun.nix` を再生成し、`nix flake lock` を更新します。CLI の runtime 依存は 0 なので、この定義を使うのは `checks.typecheck` だけです。tsc が Bun のグローバル型と `bun:test` を解決するため、型チェックの derivation だけが `bun install --linker=isolated --offline --frozen-lockfile` で `@types/bun` を復元します。`bun.nix` が古いままだとこの手順は失敗します。
 
-パッケージのビルドと `checks.tests` は `bun install` を走りません。`bun build` が bare import を解決してインライン化するため、成果物もテストも `node_modules` を要しません。
+パッケージのビルドと `checks.tests` は `bun install` を走りません。Nix の成果物は `bun build` が bare import を解決してインライン化するため、`node_modules` を要しません。tsdown は `bun run build`、つまり npm に載せるバンドルにだけ使います。
 
 `bun2nix` は PR [#110](https://github.com/nix-community/bun2nix/pull/110) の head を指しています。Bun 1.4 が書く `lockfileVersion: 2` を 2.1.2 は読めないためです。その PR が着いたら、rev を差し替えて 2.1.3 へ上げる予定です。
 
@@ -96,7 +96,7 @@ release を手で作った場合も `release: published` で起動するので�
 
 同じタグを再実行したいときは Actions タブの `workflow_dispatch` を使います。main ではなく **タグの commit** を取り直すので、後から drift した版が publish されることはありません。
 
-npm には `files` で `src` と `README.md` だけを載せています。`test/` や `tsconfig.json` は入りません。bin は `src/index.ts` を指し、shebang が `#!/usr/bin/env bun` なので、利用側に Bun が必要です。
+npm には `files` で `dist` と `README.md` だけを載せています。`test/` や `tsconfig.json` は入りません。bin は `dist/index.mjs` を指し、`prepack` が `bun run build`（tsdown）でそれを書き出します。shebang `#!/usr/bin/env bun` は tsdown が出力に残し、実行権も付けるので、利用側に必要なのは Bun だけです。
 
 ## テスト
 

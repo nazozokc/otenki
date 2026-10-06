@@ -31,13 +31,14 @@ From source:
 ```sh
 bun install
 bun run start -- <command>              # run from source
+bun run build                           # bundle dist/index.mjs, which the bin points at
 (cd apps/otenki && bun link)            # or: put `otenki` on your PATH
 ```
 
 Requires [Bun](https://bun.sh) 1.4+. The CLI has no runtime dependencies: argument
-parsing and table rendering are in-tree, so `bun install` only fetches TypeScript
-and `@types/bun` for development. There is no build step; the `bin` entry runs the
-TypeScript sources directly.
+parsing and table rendering are in-tree, so `bun install` only fetches TypeScript,
+`@types/bun` and tsdown for development. The published `bin` is one bundled file
+built by tsdown, so a run loads a single module instead of the TypeScript sources.
 
 ## Commands
 
@@ -137,7 +138,7 @@ the shared config, `bun.lock` and the Nix flake.
 ```sh
 bun test                    # unit tests, no network
 bun run typecheck           # tsc --noEmit
-bun run build               # bundle to apps/otenki/dist/otenki.js
+bun run build               # bundle to apps/otenki/dist/index.mjs (tsdown)
 bun run start -- <cmd>      # run the CLI in dev mode
 nix flake check             # build, tests and typecheck inside Nix
 nix fmt                     # nixfmt + prettier

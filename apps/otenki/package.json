@@ -2,9 +2,9 @@
   "name": "@nazozokc-prod/otenki",
   "version": "0.2.0",
   "description": "view weather for any place on earth from the terminal",
-  "module": "src/index.ts",
+  "module": "dist/index.mjs",
   "bin": {
-    "otenki": "src/index.ts"
+    "otenki": "dist/index.mjs"
   },
   "license": "MIT",
   "author": {
@@ -13,14 +13,15 @@
   },
   "type": "module",
   "files": [
-    "src",
+    "dist",
     "README.md"
   ],
   "scripts": {
-    "build": "bun build ./src/index.ts --outfile ./dist/otenki.js --target bun",
+    "build": "tsdown",
     "test": "bun test",
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "start": "bun run src/index.ts",
+    "prepack": "bun run build",
     "prepublishOnly": "bun run typecheck && bun test"
   },
   "repository": {
@@ -40,6 +41,7 @@
     "japan"
   ],
   "devDependencies": {
+    "tsdown": "^0.23.0",
     "typescript": "^7"
   }
 }

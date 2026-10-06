@@ -247,7 +247,7 @@
               echo "  Tasks:"
               echo "    bun test                    run tests"
               echo "    bun run typecheck           type check"
-              echo "    bun run build               bundle to apps/otenki/dist/otenki.js"
+              echo "    bun run build               bundle to apps/otenki/dist/index.mjs"
               echo "    bun run start -- <cmd>      run the CLI (dev mode)"
               echo "    nix run . -- <cmd>          run the Nix build"
               echo "    nix run .#update            refresh bun.nix after devDependency changes"

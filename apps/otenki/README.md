@@ -17,7 +17,7 @@ date        icon  weather                    temp  precip  prob       wind
 
 ## Install
 
-**Bun is required.** The `bin` runs the TypeScript sources directly, and the
+**Bun is required.** The `bin` is a single file bundled by tsdown, and its
 shebang asks for `bun` on `PATH`.
 
 ```sh
