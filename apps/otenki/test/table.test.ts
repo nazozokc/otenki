@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { styled } from "../src/style.ts";
-import { displayWidth, renderTable } from "../src/table.ts";
+import { renderTable } from "../src/table.ts";
+import { displayWidth } from "../src/width.ts";
 
 /**
  * `style.ts` reads `NO_COLOR` and `process.stdout.isTTY` on every call, so these

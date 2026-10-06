@@ -1,13 +1,12 @@
 import { describe, expect, spyOn, test } from "bun:test";
+import { dispatch } from "../src/cli.dispatch.ts";
+import { commandHelp, help } from "../src/cli.help.ts";
 import {
-  commandHelp,
-  dispatch,
-  help,
   parseArgs,
   UsageError,
   type Command,
   type Flags,
-} from "../src/cli.ts";
+} from "../src/cli.parse.ts";
 
 const noop = async (): Promise<void> => {};
 
@@ -64,6 +63,25 @@ describe("parseArgs", () => {
     expect(() => parseArgs(["--pick"], ["json"])).toThrow(
       "unknown option '--pick'",
     );
+  });
+
+  test("rejects an option written with a value instead of geocoding it", () => {
+    // `=` must not turn `--json=true` into a place name.
+    expect(() => parseArgs(["--json=true"], ["json"])).toThrow(
+      "unknown option '--json=true'",
+    );
+    expect(() => parseArgs(["--json"], ["json"])).not.toThrow();
+  });
+
+  test("rejects a short option bundle instead of geocoding it", () => {
+    // `-hx` is an option bundle; `-33.86` stays a coordinate (see above).
+    expect(() => parseArgs(["-hx", "函館"], ["json"])).toThrow(
+      "unknown option '-hx'",
+    );
+    expect(parseArgs(["-33.86", "151.2"], ["json"]).args).toEqual([
+      "-33.86",
+      "151.2",
+    ]);
   });
 
   test("leaves flags unset when they are absent", () => {
@@ -134,6 +152,33 @@ describe("dispatch", () => {
 
     expect(await dispatch(commands, ["today", "--help"], "1.2.3")).toBe(0);
     expect(out[0]).toContain("Usage: otenki today <location...>");
+  });
+
+  test("names the command after help, in either spelling", async () => {
+    const { out } = capture();
+
+    expect(await dispatch(commands, ["help", "today"], "1.2.3")).toBe(0);
+    expect(await dispatch(commands, ["--help", "today"], "1.2.3")).toBe(0);
+    expect(out[0]).toContain("Usage: otenki today <location...>");
+    expect(out[1]).toContain("Usage: otenki today <location...>");
+  });
+
+  test("fails on help for a command that does not exist", async () => {
+    const { err } = capture();
+
+    expect(await dispatch(commands, ["help", "temprature"], "1.2.3")).toBe(1);
+    expect(err[0]).toContain("unknown command 'temprature'");
+  });
+
+  test("blames the position when an option comes before the command", async () => {
+    const { err } = capture();
+
+    expect(await dispatch(commands, ["--json", "today", "横浜"], "1.2.3")).toBe(
+      1,
+    );
+    expect(err[0]).toContain("option '--json' must come after the command");
+    expect(err[0]).not.toContain("unknown command");
+    expect(err[0]).toContain("Usage: otenki <command>");
   });
 
   test("passes the parsed arguments and flags to the command", async () => {

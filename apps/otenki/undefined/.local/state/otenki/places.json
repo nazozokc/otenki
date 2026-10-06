@@ -1,0 +1,38 @@
+{
+  "函館": {
+    "savedAt": 1791277164224,
+    "results": [
+      {
+        "id": 2130188,
+        "name": "函館市",
+        "latitude": 41.77583,
+        "longitude": 140.73666,
+        "elevation": 5,
+        "feature_code": "PPLA2",
+        "country_code": "JP",
+        "admin1_id": 2130037,
+        "admin2_id": 2130184,
+        "timezone": "Asia/Tokyo",
+        "population": 275730,
+        "country_id": 1861060,
+        "country": "日本",
+        "admin1": "北海道",
+        "admin2": "函館市"
+      },
+      {
+        "id": 11864151,
+        "name": "函館市市民の森",
+        "latitude": 41.78726,
+        "longitude": 140.81905,
+        "elevation": 46,
+        "feature_code": "PRK",
+        "country_code": "JP",
+        "admin1_id": 2130037,
+        "timezone": "Asia/Tokyo",
+        "country_id": 1861060,
+        "country": "日本",
+        "admin1": "北海道"
+      }
+    ]
+  }
+}

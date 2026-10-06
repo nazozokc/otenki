@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { fzfChoices, matchChoice } from "../src/locate.ts";
+import { fzfChoices, matchChoice } from "../src/fzf.ts";
 import type { GeocodeResult } from "../src/geocode.ts";
 
 const place = (over: Partial<GeocodeResult>): GeocodeResult => ({

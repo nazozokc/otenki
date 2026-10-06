@@ -1,7 +1,8 @@
 #!/usr/bin/env bun
 
 import { clearCache } from "./cache.ts";
-import { dispatch, type Command, UsageError } from "./cli.ts";
+import { dispatch } from "./cli.dispatch.ts";
+import { type Command, UsageError } from "./cli.parse.ts";
 import { monthly, tomorrow, weekly } from "./daily.ts";
 import { MAX_FORECAST_DAYS } from "./forecast.ts";
 import { locate } from "./locate.ts";

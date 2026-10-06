@@ -30,6 +30,20 @@ describe("resolveLocation argument handling", () => {
     expect(location.longitude).toBe(139.69);
   });
 
+  test("accepts a pair however the shell split it", async () => {
+    // The separator and its spacing are not the caller's problem: two numbers
+    // in a row are coordinates whether they arrive as one argument or two.
+    const forms = [["41.77,", "140.73"], ["41.77 ,140.73"], ["41.77 140.73"]];
+
+    for (const args of forms) {
+      const location = await resolveLocation(args);
+
+      expect(location.latitude).toBe(41.77);
+      expect(location.longitude).toBe(140.73);
+      expect(location.label).toBe("41.77, 140.73");
+    }
+  });
+
   test("rejects a lone number instead of guessing", async () => {
     // `otenki today 41` is a typo far more often than it is a latitude.
     expect(resolveLocation(["41"])).rejects.toBeInstanceOf(LocationError);

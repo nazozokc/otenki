@@ -16,8 +16,14 @@ export type Location = {
 
 const NUMBER = /^[+-]?\d+(?:\.\d+)?$/;
 
-const isNumber = (value: string | undefined): value is string =>
-  value !== undefined && NUMBER.test(value);
+/**
+ * A coordinate pair with any spacing around the separator, checked on the
+ * arguments once they are joined: `41.77 140.73`, `41.77,140.73`,
+ * `41.77, 140.73`, even `41.77 ,140.73` are all the same two numbers, and
+ * however the shell split them should not change the answer. A lone number
+ * never matches, so `otenki today 41` still reaches the error below.
+ */
+const COORD_PAIR = /^([+-]?\d+(?:\.\d+)?)\s*[,\s]\s*([+-]?\d+(?:\.\d+)?)$/;
 
 /**
  * Accepts either a coordinate pair (`41.77 140.73`, `41.77,140.73`) or a place
@@ -27,19 +33,11 @@ const isNumber = (value: string | undefined): value is string =>
 export const resolveLocation = async (args: string[]): Promise<Location> => {
   const query = args.join(" ").trim();
 
-  if (args.length === 1 && args[0]?.includes(",") === true) {
-    const [latitude, longitude] = args[0].split(",");
-    if (isNumber(latitude) && isNumber(longitude)) {
-      return {
-        latitude: Number(latitude),
-        longitude: Number(longitude),
-        label: `${latitude}, ${longitude}`,
-      };
-    }
-  }
+  const coordinates = COORD_PAIR.exec(query);
+  const latitude = coordinates?.[1];
+  const longitude = coordinates?.[2];
 
-  if (args.length === 2 && isNumber(args[0]) && isNumber(args[1])) {
-    const [latitude, longitude] = args as [string, string];
+  if (latitude !== undefined && longitude !== undefined) {
     return {
       latitude: Number(latitude),
       longitude: Number(longitude),

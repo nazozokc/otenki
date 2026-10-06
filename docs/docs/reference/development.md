@@ -103,7 +103,7 @@ npm には `files` で `src` と `README.md` だけを載せています。`test
 ```text
 apps/otenki/test/format.test.ts    数値と日付の表示
 apps/otenki/test/geocode.test.ts   サフィックス展開と順位付け
-apps/otenki/test/locate.test.ts    fzf の候補行と選択の突き合わせ
+apps/otenki/test/fzf.test.ts       fzf の候補行と選択の突き合わせ
 apps/otenki/test/location.test.ts  座標と地名の振り分け
 apps/otenki/test/table.test.ts     表示幅と表の組版
 apps/otenki/test/cli.test.ts       引数解析、ヘルプ、終了コード
@@ -124,15 +124,19 @@ apps/otenki/test/cli.test.ts       引数解析、ヘルプ、終了コード
 | ファイル           | 役割                                                          |
 | ------------------ | ------------------------------------------------------------- |
 | `index.ts`         | コマンド定義と終了コード                                      |
-| `cli.ts`           | 引数解析、ヘルプ、dispatch                                    |
-| `table.ts`         | 表示幅の計算と表の組版                                        |
+| `cli.parse.ts`     | コマンド定義、`UsageError`、引数解析                          |
+| `cli.help.ts`      | ヘルプと usage の組み立て                                     |
+| `cli.dispatch.ts`  | コマンドの選択、実行、エラー報告                              |
+| `width.ts`         | 端末セル幅の計算（CJK・絵文字・ANSI 除去）                    |
+| `table.ts`         | 表の組版                                                      |
 | `location.ts`      | 引数を座標か地名に振り分け                                    |
 | `geocode.ts`       | サフィックス展開、候補の順位付け、地名ラベルの組み立て        |
 | `cache.ts`         | `$XDG_STATE_HOME` 配下の places.json の読み書きと 30 日の TTL |
 | `forecast.ts`      | Forecast API の要求と応答の型付け                             |
 | `today.ts`         | `today` の出力                                                |
 | `daily.ts`         | `tomorrow` `weekly` `monthly` の出力                          |
-| `locate.ts`        | `locate` の出力と fzf の起動                                  |
+| `locate.ts`        | `locate` の出力                                               |
+| `fzf.ts`           | fzf の候補行、選択の突き合わせ、プロセス起動                  |
 | `format.ts`        | 温度、風、湿度、日付の表示形式                                |
 | `style.ts`         | ANSI 色。TTY と `NO_COLOR` を見る                             |
 | `weather.icon.ts`  | 天気コードから絵文字                                          |
