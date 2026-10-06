@@ -7,7 +7,7 @@ name: publish
 #   sync     main の apps/otenki/package.json と bun.lock をその版に直して push
 #   build    その版で pack → 型検査とテスト → 取り出した tarball を実際に起動
 #   release  tarball をその release に添付
-#   npm      npm publish --provenance
+#   npm      trusted publishing（OIDC）で npm publish
 on:
   # 公開（published）された release が作動源。タグの push は見ない ——
   # release を作るコマンドはタグも push するので、両方を受けると 1 回の release で
@@ -217,8 +217,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      # --provenance は OIDC で署名を取り直すため、この権限が無いと publish が
-      # 失敗する。long-lived token ではなく、短命の identity で証明される。
+      # trusted publishing は OIDC で短命トークンを取るので、この権限が無いと
+      # publish は認証に落ちる。long-lived token はもう使わない。
       id-token: write
     steps:
       - uses: actions/checkout@v7
@@ -231,31 +231,30 @@ jobs:
         with:
           bun-version: 1.4.2
 
+      # trusted publishing は npm CLI 11.5.1+ / Node 22.14.0+ 必須。
+      # runner 既定の Node では足りないので明示的に入れる。registry-url は
+      # setup-node が .npmrc を書き、publish の行き先を固定する。
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          registry-url: https://registry.npmjs.org
+          # release ではキャッシュしない。古い tarball が publish を汚さないため。
+          package-manager-cache: false
+
       # publish する版は tag が決める。checkout した commit の package.json を
       # そのまま使うと、main より古い版が npm に載る。
       - uses: ./.github/actions/sync-version
         with:
           version: ${{ needs.resolve.outputs.version }}
 
-      # job の if: では secrets コンテキストが使えない（actionlint が指摘する）。
-      # 判定は step に落とす。NPM_TOKEN は secret で持つ。token が未設定なら
-      # npm だけを飛ばして GitHub Release は出す。OIDC 認証（trusted publishing）
-      # へ移すには npmjs.com 側で workflow 名を登録し、この判定ごと消す。
-      - name: check for the npm token
-        id: token
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          if [ -z "$NODE_AUTH_TOKEN" ]; then
-            echo "found=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::NPM_TOKEN is not set, so the npm publish is skipped."
-          else
-            echo "found=true" >> "$GITHUB_OUTPUT"
-          fi
+      # prepublishOnly が typecheck と test を実行するので、tsc が要る。
+      - name: install
+        run: bun install --frozen-lockfile
 
+      # 認証は npmjs.com の package settings に登録した trusted publisher
+      # （nazozokc/otenki / publish.yml）の OIDC。NODE_AUTH_TOKEN は渡さない ——
+      # 渡すと token 認証が優先され、OIDC は使われない。provenance も
+      # trusted publishing なら自動生成されるのでフラグは不要。
       - name: publish
-        if: steps.token.outputs.found == 'true'
         working-directory: ${{ env.WORKDIR }}
-        run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public
