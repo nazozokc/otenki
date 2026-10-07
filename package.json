@@ -15,6 +15,7 @@
     "build": "bun run --filter otenki-cli build",
     "test": "bun run --filter otenki-cli test",
     "typecheck": "bun run --filter otenki-cli typecheck",
+    "typos": "typos --hidden",
     "start": "bun run --filter otenki-cli start --"
   },
   "devDependencies": {

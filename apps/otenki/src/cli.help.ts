@@ -56,7 +56,9 @@ export const commandHelp = (command: Command): string => {
     ...arguments_,
     ...section(
       "Options",
-      [...command.options, helpOption].map((option) => [
+      // The global options are listed per command because the parser accepts
+      // them there as well: `otenki today 横浜 --version` has to work.
+      [...command.options, versionOption, helpOption].map((option) => [
         optionLabel(option),
         option.description,
       ]),

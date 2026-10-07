@@ -22,8 +22,8 @@ features:
     details: 天気と地名はどちらも無償の公開 API。アカウント登録も課金設定も要らない。
   - title: 地名だけで引ける
     details: 函館も横浜市 神奈川も、そのまま 1 引数で通る。日本語のサフィックス展開とランキングで自治体を当てる。
-  - title: 今から 16 日先まで
-    details: today / tomorrow / weekly / monthly の 4 コマンド。API の上限が 16 日なので、monthly は 16 日間と明記している。
+  - title: 今から 14 日先まで
+    details: today / tomorrow / weekly / fortnight の 4 コマンド。API の上限は 16 日、表示は 2 週間の 14 日まで。
   - title: 端末前提
     details: TTY では色付き、パイプへ渡せば素の色。NO_COLOR も尊重するので、そのままスクリプトに使える。
 ---
@@ -51,7 +51,7 @@ bun run start -- today 函館      # ソースから実行
 bunx otenki-cli today 函館                # 現在の天気
 bunx otenki-cli tomorrow 横浜             # 明日の予報
 bunx otenki-cli weekly 35.69 139.69       # 7 日間。座標でもよい
-bunx otenki-cli monthly 東京              # 16 日間
+bunx otenki-cli fortnight 東京            # 14 日間（2 週間）
 bunx otenki-cli locate 横浜 --all         # 同名地の候補を全部見る
 bunx otenki-cli locate 横浜 --pick        # fzf で選ぶ
 bunx otenki-cli today 横浜 --json         # スクリプト用に生 JSON
@@ -74,7 +74,7 @@ bunx otenki-cli today 函館
 
 ## 前提と制約
 
-- `monthly` は 16 日で止まる。Forecast API が `forecast_days` 17 以上を拒否するため。
+- 予報は 14 日で止まる。Forecast API の上限が 16 日で `forecast_days` 17 以上は拒否されるため、それより先は引けない。
 - 47 都道府県のうち 41 個は素の県名で引ける。残りは県庁所在地の市名で。
 - `高知` は地名で引けない。`bunx otenki-cli today 32.98880 132.55970` と座標を渡す。
 - 同名の地名は `横浜` のように複数ある。`--all` で確認し、`--pick` で選ぶ。

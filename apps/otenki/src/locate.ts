@@ -44,6 +44,19 @@ const renderPlaces = (places: GeocodeResult[]): string =>
     ]),
   );
 
+/**
+ * What `--json` prints. `--all` swaps the single best answer for the candidate
+ * list, but an interactive choice is the caller's own answer and outranks it:
+ * without that, `--all --pick --json` would hand back every candidate and drop
+ * the one the person at the keyboard just picked.
+ */
+export const jsonPayload = <T>(
+  options: { all?: boolean; pick?: boolean },
+  places: readonly T[],
+  chosen: T,
+): T | readonly T[] =>
+  options.pick === true ? chosen : options.all === true ? places : chosen;
+
 export const locate = async (
   args: string[],
   options: { json?: boolean; all?: boolean; pick?: boolean },
@@ -71,9 +84,7 @@ export const locate = async (
   }
 
   if (options.json === true) {
-    console.log(
-      JSON.stringify(options.all === true ? places : chosen, null, 2),
-    );
+    console.log(JSON.stringify(jsonPayload(options, places, chosen), null, 2));
     return;
   }
 

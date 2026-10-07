@@ -139,7 +139,7 @@ apps/otenki/test/cli.test.ts       引数解析、ヘルプ、終了コード
 | `cache.ts`         | `$XDG_STATE_HOME` 配下の places.json の読み書きと 30 日の TTL |
 | `forecast.ts`      | Forecast API の要求と応答の型付け                             |
 | `today.ts`         | `today` の出力                                                |
-| `daily.ts`         | `tomorrow` `weekly` `monthly` の出力                          |
+| `daily.ts`         | `tomorrow` `weekly` `fortnight` の出力                        |
 | `locate.ts`        | `locate` の出力                                               |
 | `fzf.ts`           | fzf の候補行、選択の突き合わせ、プロセス起動                  |
 | `format.ts`        | 温度、風、湿度、日付の表示形式                                |

@@ -60,18 +60,18 @@
 
 座標と `timezone=auto` は常に送ります。`auto` を付けると、座標からタイムゾーンを引いてくれるので、実行マシンの設定に左右されません。
 
-| 変数                            | コマンド                      |
-| ------------------------------- | ----------------------------- |
-| `temperature_2m`                | `today`                       |
-| `apparent_temperature`          | `today`                       |
-| `weather_code`                  | `today`                       |
-| `wind_speed_10m`                | `today`                       |
-| `relative_humidity_2m`          | `today`                       |
-| `precipitation`                 | `today`                       |
-| `temperature_2m_max` `_min`     | `tomorrow` `weekly` `monthly` |
-| `precipitation_sum`             | `tomorrow` `weekly` `monthly` |
-| `precipitation_probability_max` | `tomorrow` `weekly` `monthly` |
-| `wind_speed_10m_max`            | `tomorrow` `weekly` `monthly` |
+| 変数                            | コマンド                        |
+| ------------------------------- | ------------------------------- |
+| `temperature_2m`                | `today`                         |
+| `apparent_temperature`          | `today`                         |
+| `weather_code`                  | `today`                         |
+| `wind_speed_10m`                | `today`                         |
+| `relative_humidity_2m`          | `today`                         |
+| `precipitation`                 | `today`                         |
+| `temperature_2m_max` `_min`     | `tomorrow` `weekly` `fortnight` |
+| `precipitation_sum`             | `tomorrow` `weekly` `fortnight` |
+| `precipitation_probability_max` | `tomorrow` `weekly` `fortnight` |
+| `wind_speed_10m_max`            | `tomorrow` `weekly` `fortnight` |
 
 `forecast_days` は 1 から 16 に丸めます。API 側が 17 以上を拒否するためです。
 

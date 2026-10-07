@@ -1,0 +1,32 @@
+# typos (https://github.com/crate-ci/typos) — spell checker for the repo.
+# Run it with `bun run typos`, or through `nix flake check`.
+
+[files]
+extend-exclude = [
+  # generated output, never hand written
+  "**/node_modules/**",
+  "**/dist/**",
+  "**/.vitepress/cache/**",
+  # lock and dependency lists are package names, not words
+  "**/bun.lock",
+  "**/bun.nix",
+  # `nix build "path:$PWD"` copies the whole working tree, .git included
+  "**/.git/**",
+  "**/result*",
+]
+
+[default]
+locale = "en-us"
+# Japanese prose is out of scope by design: only Latin words are checked.
+
+[default.extend-words]
+# British English on purpose. Switching the locale to en-gb would drag
+# NO_COLOR, Color and sanitize() in with it, which is worse than the reverse.
+colour = "colour"
+coloured = "coloured"
+colours = "colours"
+licence = "licence"
+neighbouring = "neighbouring"
+behaviour = "behaviour"
+# A deliberate misspelling: the unknown-command tests feed a broken name.
+temprature = "temprature"

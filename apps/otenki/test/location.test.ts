@@ -46,12 +46,48 @@ describe("resolveLocation argument handling", () => {
 
   test("rejects a lone number instead of guessing", async () => {
     // `otenki today 41` is a typo far more often than it is a latitude.
-    expect(resolveLocation(["41"])).rejects.toBeInstanceOf(LocationError);
+    await expect(resolveLocation(["41"])).rejects.toBeInstanceOf(LocationError);
   });
 
   test("rejects an empty location", async () => {
-    expect(resolveLocation([])).rejects.toBeInstanceOf(LocationError);
-    expect(resolveLocation(["   "])).rejects.toBeInstanceOf(LocationError);
+    await expect(resolveLocation([])).rejects.toBeInstanceOf(LocationError);
+    await expect(resolveLocation(["   "])).rejects.toBeInstanceOf(
+      LocationError,
+    );
+  });
+
+  test("rejects a coordinate outside the globe", async () => {
+    // The Forecast API answers these with a bare HTTP 400, so the range is
+    // checked before anything is sent.
+    await expect(resolveLocation(["91", "200"])).rejects.toBeInstanceOf(
+      LocationError,
+    );
+    await expect(resolveLocation(["35.69", "539.69"])).rejects.toBeInstanceOf(
+      LocationError,
+    );
+    await expect(resolveLocation(["-90.1", "10"])).rejects.toBeInstanceOf(
+      LocationError,
+    );
+  });
+
+  test("names the offending pair and the accepted range", async () => {
+    await expect(resolveLocation(["35.69", "539.69"])).rejects.toThrow(
+      "座標の指定が不正です: 35.69, 539.69",
+    );
+  });
+
+  test("keeps the poles and the antimeridian", async () => {
+    const corners = [
+      ["90", "180"],
+      ["-90", "-180"],
+    ];
+
+    for (const args of corners) {
+      const location = await resolveLocation(args);
+
+      expect(location.latitude).toBe(Number(args[0]));
+      expect(location.longitude).toBe(Number(args[1]));
+    }
   });
 });
 

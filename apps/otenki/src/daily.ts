@@ -5,11 +5,7 @@ import {
   formatTemperatureRange,
   formatWindSpeed,
 } from "./format.ts";
-import {
-  fetchDaily,
-  MAX_FORECAST_DAYS,
-  type DailyWeather,
-} from "./forecast.ts";
+import { fetchDaily, type DailyWeather } from "./forecast.ts";
 import { resolveLocation } from "./location.ts";
 import { bold, dim, temperature } from "./style.ts";
 import { renderTable, type Column } from "./table.ts";
@@ -83,29 +79,26 @@ export const weekly = async (
     return;
   }
 
-  console.log(`${bold(location.label)} ${dim("— 7日間予報")}`);
+  // Counted from what came back, not from the name of the command: the API
+  // may return fewer days than were asked for, and a heading that lies about
+  // the rows below it is worse than one that looks odd.
+  console.log(`${bold(location.label)} ${dim(`— ${days.length}日間予報`)}`);
   console.log(renderForecast(days));
 };
 
-export const monthly = async (
+/** Two weeks, kept under the Forecast API's ceiling of 16 forecast days. */
+export const fortnight = async (
   args: string[],
   options: { json?: boolean },
 ): Promise<void> => {
   const location = await resolveLocation(args);
-  const days = await fetchDaily(
-    location.latitude,
-    location.longitude,
-    MAX_FORECAST_DAYS,
-  );
+  const days = await fetchDaily(location.latitude, location.longitude, 14);
 
   if (options.json === true) {
     console.log(JSON.stringify({ location, days }, null, 2));
     return;
   }
 
-  // A month is not reachable: the Forecast API refuses forecast_days above 16.
-  console.log(
-    `${bold(location.label)} ${dim(`— ${days.length}日間予報 (API上限 ${MAX_FORECAST_DAYS}日)`)}`,
-  );
+  console.log(`${bold(location.label)} ${dim(`— ${days.length}日間予報`)}`);
   console.log(renderForecast(days));
 };

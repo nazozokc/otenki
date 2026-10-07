@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import {
   candidateQueries,
+  matchesTokens,
+  placeLabel,
+  queryTokens,
   rankCandidates,
   type GeocodeResult,
 } from "../src/geocode.ts";
@@ -66,6 +69,75 @@ describe("candidateQueries", () => {
     expect(queries[0]).toBe("市");
     expect(queries.every((query) => query.length > 0)).toBe(true);
     expect(queries).toContain("市県");
+  });
+});
+
+describe("queryTokens", () => {
+  test("separates the place name from its filters", () => {
+    // The API indexes one name per record, so 横浜市 神奈川 can never arrive
+    // there intact: the split is what makes the documented query work.
+    expect(queryTokens("横浜市 神奈川")).toEqual(["横浜市", "神奈川"]);
+  });
+
+  test("collapses every run of whitespace and trims the ends", () => {
+    expect(queryTokens("  函館   北海道 ")).toEqual(["函館", "北海道"]);
+    expect(queryTokens("　　　")).toEqual([]);
+  });
+
+  test("treats an ideographic space as a separator too", () => {
+    // A Japanese keyboard produces U+3000 between two arguments often enough.
+    expect(queryTokens("横浜市　神奈川")).toEqual(["横浜市", "神奈川"]);
+  });
+
+  test("keeps a single name in one token", () => {
+    expect(queryTokens("函館市")).toEqual(["函館市"]);
+  });
+});
+
+describe("matchesTokens", () => {
+  test("reaches a prefecture spelled without its suffix", () => {
+    // The caller writes 神奈川 while the index answers 神奈川県.
+    const candidate = place({ name: "横浜市", admin1: "神奈川県" });
+
+    expect(matchesTokens(candidate, ["神奈川"])).toBe(true);
+  });
+
+  test("reaches a place whose name dropped the suffix the filter kept", () => {
+    const candidate = place({ name: "横浜", admin1: "神奈川県" });
+
+    expect(matchesTokens(candidate, ["横浜市"])).toBe(true);
+  });
+
+  test("rejects a same named place in another prefecture", () => {
+    const candidate = place({ name: "横浜", admin1: "福岡県" });
+
+    expect(matchesTokens(candidate, ["神奈川"])).toBe(false);
+  });
+
+  test("matches against the country as well", () => {
+    const candidate = place({
+      name: "東京都",
+      admin1: "東京都",
+      country: "日本",
+      country_code: "JP",
+    });
+
+    expect(matchesTokens(candidate, ["日本"])).toBe(true);
+  });
+
+  test("folds case for latin input", () => {
+    expect(matchesTokens(place({ name: "Tokyo" }), ["tokyo"])).toBe(true);
+  });
+
+  test("requires every filter to match", () => {
+    const candidate = place({ name: "横浜市", admin1: "神奈川県" });
+
+    expect(matchesTokens(candidate, ["横浜市", "神奈川"])).toBe(true);
+    expect(matchesTokens(candidate, ["横浜市", "青森"])).toBe(false);
+  });
+
+  test("keeps everything when there is nothing to filter by", () => {
+    expect(matchesTokens(place({ name: "x" }), [])).toBe(true);
   });
 });
 
@@ -165,5 +237,39 @@ describe("rankCandidates", () => {
 
   test("returns an empty list unchanged", () => {
     expect(rankCandidates([])).toEqual([]);
+  });
+});
+
+describe("placeLabel", () => {
+  test("drops an admin1 that just repeats the name", () => {
+    // 東京都 and 北海道 are both the name and the admin1 in the geocoder's
+    // answer, and printing either twice reads like a mistake.
+    expect(placeLabel(place({ name: "東京都", admin1: "東京都" }))).toBe(
+      "東京都",
+    );
+    expect(placeLabel(place({ name: "北海道", admin1: "北海道" }))).toBe(
+      "北海道",
+    );
+  });
+
+  test("keeps an admin1 that adds something", () => {
+    expect(placeLabel(place({ name: "横浜市", admin1: "神奈川県" }))).toBe(
+      "横浜市 神奈川県",
+    );
+  });
+
+  test("omits an admin1 that is missing or blank", () => {
+    expect(placeLabel(place({ name: "函館市" }))).toBe("函館市");
+    expect(placeLabel(place({ name: "函館市", admin1: "  " }))).toBe("函館市");
+  });
+
+  test("ignores surrounding whitespace before comparing", () => {
+    expect(placeLabel(place({ name: " 東京都 ", admin1: "東京都" }))).toBe(
+      "東京都",
+    );
+  });
+
+  test("treats a case difference as the same word", () => {
+    expect(placeLabel(place({ name: "Tokyo", admin1: "tokyo" }))).toBe("Tokyo");
   });
 });

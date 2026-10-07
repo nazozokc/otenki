@@ -10,9 +10,8 @@ $ bunx otenki-cli today 不存在の地名
 Geocoding API は索引の綴り方に弱いので、次の順に試します。
 
 1. 市町村名を最後まで書く。`函館` がだめなら `函館市`
-2. 都道府県を足す。`横浜` なら `横浜市 神奈川`
-3. 県名と市名の順を入れ替える
-4. 座標で直接指定する
+2. 都道府県を足す。`横浜` なら `横浜市 神奈川`。市名と県名の逆順も構いません（両方の並びで試します）
+3. 座標で直接指定する
 
 ```sh
 bunx otenki-cli today 41.77583 140.73666
@@ -33,9 +32,9 @@ PPLA · 群馬県 · 日本 · 標高360m
 
 `--all` で候補を並べ、意図と違えば `--pick` で選び直します。
 
-## monthly が 16 日で止まる
+## 予報が 14 日で止まる
 
-仕様です。Forecast API が `forecast_days` 17 以上を拒否します。`monthly` は 16 日間の見通しとして実装しています。
+仕様です。Forecast API が `forecast_days` 17 以上を拒否するので、先は 16 日までしか出ません。`fortnight` は 2 週間に揃えて 14 日で止めています。
 
 過去の天気が欲しい場合は [Historical Weather API](https://open-meteo.com/en/docs/historical-weather-api) を直接使ってください。
 

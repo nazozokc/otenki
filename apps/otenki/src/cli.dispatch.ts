@@ -71,6 +71,11 @@ export const dispatch = async (
     ),
     "help",
     "h",
+    // Both are global options, but the command token comes first in
+    // `otenki today 横浜 --version`, so they are only reachable if the
+    // per-command parser is told about them too.
+    "version",
+    "V",
   ];
   const usage = commandHelp(command);
 
@@ -79,6 +84,11 @@ export const dispatch = async (
 
     if (flags.help === true || flags.h === true) {
       console.log(usage);
+      return 0;
+    }
+
+    if (flags.version === true || flags.V === true) {
+      console.log(version);
       return 0;
     }
 

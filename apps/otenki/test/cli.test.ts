@@ -113,6 +113,15 @@ describe("help", () => {
     expect(text).toContain("--json");
   });
 
+  test("lists the global options in a single command's help too", () => {
+    // `otenki today 横浜 --version` is accepted, so the help for the command
+    // has to admit it exists.
+    const text = commandHelp(commands[0] as Command);
+
+    expect(text).toContain("-V, --version");
+    expect(text).toContain("-h, --help");
+  });
+
   test("omits the argument section when a command takes none", () => {
     expect(commandHelp(commands[1] as Command)).not.toContain("Arguments:");
   });
@@ -137,6 +146,18 @@ describe("dispatch", () => {
 
     expect(await dispatch(commands, ["--version"], "1.2.3")).toBe(0);
     expect(await dispatch(commands, ["-V"], "1.2.3")).toBe(0);
+    expect(out).toEqual(["1.2.3", "1.2.3"]);
+  });
+
+  test("prints the version from behind a command and its arguments", async () => {
+    const { out } = capture();
+
+    // The command token comes first, so the global option only works when the
+    // per-command parser is told about it.
+    expect(
+      await dispatch(commands, ["today", "横浜", "--version"], "1.2.3"),
+    ).toBe(0);
+    expect(await dispatch(commands, ["today", "-V"], "1.2.3")).toBe(0);
     expect(out).toEqual(["1.2.3", "1.2.3"]);
   });
 

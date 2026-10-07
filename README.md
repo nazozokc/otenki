@@ -50,21 +50,21 @@ built by tsdown, so a run loads a single module instead of the TypeScript source
 
 ## Commands
 
-| Command    | Description                                    |
-| ---------- | ---------------------------------------------- |
-| `today`    | current conditions                             |
-| `tomorrow` | tomorrow's forecast                            |
-| `weekly`   | 7 day forecast                                 |
-| `monthly`  | 16 day forecast (see the note below)           |
-| `locate`   | resolve a place name to latitude and longitude |
-| `cache`    | inspect or drop the place name cache           |
+| Command     | Description                                    |
+| ----------- | ---------------------------------------------- |
+| `today`     | current conditions                             |
+| `tomorrow`  | tomorrow's forecast                            |
+| `weekly`    | 7 day forecast                                 |
+| `fortnight` | 14 day forecast (see the note below)           |
+| `locate`    | resolve a place name to latitude and longitude |
+| `cache`     | inspect or drop the place name cache           |
 
 Every weather command accepts a location either as a place name or as a
 coordinate pair, and every command takes `--json` for scripting.
 
 ```sh
 bunx otenki-cli today 横浜            # by name
-bunx otenki-cli today 横浜市 神奈川     # name plus prefecture, still one string
+bunx otenki-cli today 横浜市 神奈川     # name plus prefecture, either order
 bunx otenki-cli today 35.69 139.69    # latitude longitude
 bunx otenki-cli today 35.69,139.69    # same, comma separated
 bunx otenki-cli locate 横浜 --all     # every geocoder candidate, not just the best
@@ -124,9 +124,9 @@ which takes a repeat lookup from about 1.5 s to about 0.08 s.
 
 ### Known gaps
 
-- **`monthly` is capped at 16 days.** The Forecast API rejects
-  `forecast_days` above 16, so this command is a 16 day outlook, not a calendar
-  month. For past weather, use the [Historical Weather API](https://open-meteo.com/en/docs/historical-weather-api).
+- **Forecasts stop at 14 days.** The Forecast API rejects `forecast_days` above
+  16, so nothing can look further out; `fortnight` draws the line at two weeks.
+  For past weather, use the [Historical Weather API](https://open-meteo.com/en/docs/historical-weather-api).
 - **41 of the 47 prefectures resolve from their bare name.** The remaining six
   — 岩手 群馬 愛知 滋賀 愛媛 高知 — have no same-named municipality, so no suffix
   exists to append. Five work under their prefectural capital: `盛岡市`,
@@ -146,9 +146,10 @@ the shared config, `bun.lock` and the Nix flake.
 ```sh
 bun test                    # unit tests, no network
 bun run typecheck           # tsc --noEmit
+bun run typos               # spell check (typos, from the devShell)
 bun run build               # bundle to apps/otenki/dist/index.mjs (tsdown)
 bun run start -- <cmd>      # run the CLI in dev mode
-nix flake check             # build, tests and typecheck inside Nix
+nix flake check             # build, tests, typecheck and typos inside Nix
 nix fmt                     # nixfmt + prettier
 ```
 

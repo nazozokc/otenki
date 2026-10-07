@@ -3,8 +3,7 @@
 import { clearCache } from "./cache.ts";
 import { dispatch } from "./cli.dispatch.ts";
 import { type Command, UsageError } from "./cli.parse.ts";
-import { monthly, tomorrow, weekly } from "./daily.ts";
-import { MAX_FORECAST_DAYS } from "./forecast.ts";
+import { fortnight, tomorrow, weekly } from "./daily.ts";
 import { locate } from "./locate.ts";
 import { today } from "./today.ts";
 import { version } from "./version.ts";
@@ -42,11 +41,11 @@ const commands: Command[] = [
     run: weekly,
   },
   {
-    name: "monthly",
-    description: `${MAX_FORECAST_DAYS} day forecast (the Forecast API caps forecast_days at ${MAX_FORECAST_DAYS})`,
+    name: "fortnight",
+    description: "14 day forecast",
     argument: LOCATION,
     options: [json],
-    run: monthly,
+    run: fortnight,
   },
   {
     name: "locate",

@@ -118,6 +118,54 @@ const search = async (
   return data.results ?? [];
 };
 
+/**
+ * Whitespace turns one argument into a place name plus the filters that narrow
+ * it down: `横浜市 神奈川` is a name and a prefecture, not one long name. The
+ * API only indexes a single name per record, so a joined query matches
+ * nothing at all and has to be taken apart here.
+ *
+ * Exported for tests: the split is the whole contract with resolveLocation.
+ */
+export const queryTokens = (query: string): string[] =>
+  query
+    .trim()
+    .split(/\s+/)
+    .filter((token) => token !== "");
+
+/**
+ * Fields a filter token is allowed to appear in. The API returns these in the
+ * requested language, so `country` is 日本 under `language=ja` and Japan under
+ * `language=en`; matching against every field keeps either spelling working.
+ * Exported for tests.
+ */
+const filterFields = (place: GeocodeResult): string[] =>
+  [
+    place.name,
+    place.admin1,
+    place.admin2,
+    place.country,
+    place.country_code,
+  ].filter((field): field is string => field !== undefined && field !== "");
+
+/**
+ * A token matches when it is contained in a field or the other way round:
+ * `神奈川` has to reach `神奈川県` and `神奈川県` has to reach `神奈川`, since
+ * the caller and the index disagree about whether the suffix is spelled out.
+ * Case folding only affects ASCII, so `Tokyo` and `tokyo` compare equal.
+ * Exported for tests.
+ */
+export const matchesTokens = (
+  place: GeocodeResult,
+  tokens: string[],
+): boolean =>
+  tokens.every((token) => {
+    const needle = token.toLowerCase();
+    return filterFields(place).some((field) => {
+      const hay = field.toLowerCase();
+      return hay.includes(needle) || needle.includes(hay);
+    });
+  });
+
 /** Optional string fields: absent stays absent, a non-string is dropped. */
 const clean = (value: unknown): string | undefined =>
   typeof value === "string" ? sanitizeText(value) : undefined;
@@ -141,21 +189,81 @@ const sanitizePlace = (place: GeocodeResult): GeocodeResult => ({
   timezone: clean(place.timezone),
 });
 
-/** All candidates for a place name, best match first. */
+/** Every ladder variant at once, deduplicated and ranked. */
+const ladder = async (
+  name: string,
+  count: number,
+): Promise<GeocodeResult[]> => {
+  // The variants are independent, so issue them at once rather than paying a
+  // round trip each: the full ladder is otherwise up to 14 sequential requests.
+  const responses = await Promise.all(
+    candidateQueries(name).map((query) => search(query, count)),
+  );
+
+  const found = new Map<number, GeocodeResult>();
+  for (const places of responses) {
+    for (const place of places) found.set(place.id, place);
+  }
+
+  return rankCandidates([...found.values()]);
+};
+
+/**
+ * The two orders worth trying: the name first (`横浜市 神奈川`), then the
+ * documented swap (`神奈川 横浜市`). Two passes cap the cost whatever the
+ * caller typed — a twenty token typo would otherwise walk the ladder once per
+ * token. Only called for a multi token query, so both tokens exist.
+ */
+const passes = (tokens: string[]): { primary: string; filters: string[] }[] => {
+  const head = tokens[0];
+  const second = tokens[1];
+  if (head === undefined || second === undefined) return [];
+
+  const byName = { primary: head, filters: tokens.slice(1) };
+  if (second === head) return [byName];
+
+  return [
+    byName,
+    { primary: second, filters: tokens.filter((_, index) => index !== 1) },
+  ];
+};
+
+/**
+ * All candidates for a place name, best match first. A whitespace separated
+ * query is read as name plus filters, so `横浜市 神奈川` narrows the ladder's
+ * output to Kanagawa instead of asking the API to index both words at once.
+ */
 export const geocode = async (
   query: string,
   count: number = DEFAULT_COUNT,
 ): Promise<GeocodeResult[]> => {
   const results = await cachedGeocode(query, async () => {
-    // The variants are independent, so issue them at once rather than paying a
-    // round trip each: the full ladder is otherwise up to 14 sequential requests.
-    const responses = await Promise.all(
-      candidateQueries(query).map((name) => search(name, count)),
-    );
+    const tokens = queryTokens(query);
+    if (tokens.length < 2) return ladder(query, count);
+
+    // Both orders are searched and the survivors pooled rather than returning
+    // whichever pass answers first: `神奈川 横浜市` has to reach 横浜市 even
+    // though the swap's first token also names a district inside it, and the
+    // ranker already knows a PPLA city outranks a PPL. The filters still do
+    // the narrowing — the swap only widens what is on offer, never the answer
+    // to a query that matched nothing.
+    const searches = passes(tokens);
+
+    // Plus the phrase exactly as typed: `New York` is a name with a space in
+    // it, and neither half is one, so only the joined form can find it. This
+    // is also every result the split ever produced before, unfiltered, which
+    // is what keeps the new path from losing a match the old one had. A
+    // Japanese phrase matches nothing at all (the bug this replaced) so it is
+    // not worth the ladder batch.
+    if (!JAPANESE_SCRIPT.test(query)) {
+      searches.push({ primary: query.trim(), filters: [] });
+    }
 
     const found = new Map<number, GeocodeResult>();
-    for (const places of responses) {
-      for (const place of places) found.set(place.id, place);
+    for (const { primary, filters } of searches) {
+      for (const place of await ladder(primary, count)) {
+        if (matchesTokens(place, filters)) found.set(place.id, place);
+      }
     }
 
     return rankCandidates([...found.values()]);
@@ -176,7 +284,15 @@ export const geocodeOne = async (query: string): Promise<GeocodeResult> => {
   return best;
 };
 
-export const placeLabel = (place: GeocodeResult): string =>
-  [place.name, place.admin1]
-    .filter((part) => part !== undefined && part !== "")
-    .join(" ");
+/**
+ * `name` and `admin1` are the same string for 東京都 and 北海道, and printing it
+ * twice reads like a copy-paste mistake rather than as emphasis.
+ */
+export const placeLabel = (place: GeocodeResult): string => {
+  const name = place.name.trim();
+  const admin1 = (place.admin1 ?? "").trim();
+
+  if (name === "") return admin1;
+  if (admin1 === "" || name.toLowerCase() === admin1.toLowerCase()) return name;
+  return `${name} ${admin1}`;
+};

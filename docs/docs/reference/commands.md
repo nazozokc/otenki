@@ -73,22 +73,24 @@ date        icon  weather                    temp  precip  prob       wind
 | ---------- | -------------- |
 | `--json`   | 生 JSON を出力 |
 
-## monthly
+## fortnight
 
-16 日間の予報。
+2 週間（14 日）の予報。
 
 ```sh
-bunx otenki-cli monthly <location...>
+bunx otenki-cli fortnight <location...>
 ```
 
 ```console
-$ bunx otenki-cli monthly 横浜
-横浜市 神奈川県 — 16日間予報 (API上限 16日)
-date        icon  weather                    temp   precip  prob       wind
-───────────────────────────────────────────────────────────────────────────
+$ bunx otenki-cli fortnight 横浜
+横浜市 神奈川県 — 14日間予報
+date        icon  weather                    temp  precip  prob       wind
+──────────────────────────────────────────────────────────────────────────
+10-07 (水)  ☁️    曇り            17.8°C ~ 22.8°C  0.0 mm   70%  13.6 km/h
+10-08 (木)  🌤️    晴れ            15.9°C ~ 22.9°C  0.0 mm    0%   9.5 km/h
 ```
 
-名称は `monthly` ですが、実際は Forecast API の上限で 16 日で止まります。`forecast_days` を 17 以上にすると API 側が拒否するためです。
+14 日は 2 週間分です。Forecast API の上限は 16 日で、`forecast_days` を 17 以上にすると拒否されます。
 
 過去の天気が必要な場合は [Historical Weather API](https://open-meteo.com/en/docs/historical-weather-api) を直接使ってください。
 
@@ -129,11 +131,11 @@ name              admin1         lat        lon  feature          pop
 
 人口が不明な候補は `-` になります。
 
-| オプション | 内容                                   |
-| ---------- | -------------------------------------- |
-| `--all`    | 候補をすべて表で表示する               |
-| `--pick`   | fzf で候補を選ぶ。fzf が無ければエラー |
-| `--json`   | 生 JSON を出力。`--all` なら配列       |
+| オプション | 内容                                                           |
+| ---------- | -------------------------------------------------------------- |
+| `--all`    | 候補をすべて表で表示する                                       |
+| `--pick`   | fzf で候補を選ぶ。fzf が無ければエラー                         |
+| `--json`   | 生 JSON を出力。`--all` なら配列、`--pick` 併用時は選んだ 1 件 |
 
 `--pick` は候補が 1 件だけのときは呼びません。`fzf` で Ctrl-C を押すと、順位の一番上の場所に戻ります。
 

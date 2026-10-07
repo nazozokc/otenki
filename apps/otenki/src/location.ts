@@ -26,6 +26,15 @@ const NUMBER = /^[+-]?\d+(?:\.\d+)?$/;
 const COORD_PAIR = /^([+-]?\d+(?:\.\d+)?)\s*[,\s]\s*([+-]?\d+(?:\.\d+)?)$/;
 
 /**
+ * The Forecast API answers a coordinate outside the globe with a bare HTTP 400
+ * that would surface as an upstream error message. Checking here keeps the
+ * failure in the same voice as the lone-number case below: the caller's
+ * input is wrong, not the weather service.
+ */
+const inRange = (value: number, min: number, max: number): boolean =>
+  value >= min && value <= max;
+
+/**
  * Accepts either a coordinate pair (`41.77 140.73`, `41.77,140.73`) or a place
  * name (`函館`, `横浜市 神奈川`). A lone number is rejected: `otenki today 41`
  * is far more likely a typo than a latitude.
@@ -38,9 +47,18 @@ export const resolveLocation = async (args: string[]): Promise<Location> => {
   const longitude = coordinates?.[2];
 
   if (latitude !== undefined && longitude !== undefined) {
+    const lat = Number(latitude);
+    const lon = Number(longitude);
+
+    if (!inRange(lat, -90, 90) || !inRange(lon, -180, 180)) {
+      throw new LocationError(
+        `座標の指定が不正です: ${latitude}, ${longitude}（緯度は-90〜90、経度は-180〜180で指定してください）`,
+      );
+    }
+
     return {
-      latitude: Number(latitude),
-      longitude: Number(longitude),
+      latitude: lat,
+      longitude: lon,
       label: `${latitude}, ${longitude}`,
     };
   }

@@ -179,6 +179,39 @@
             '';
           };
 
+          # 綴りのチェック。何を対象にするかは _typos.toml が決めている（ローカルの
+          # `bun run typos` も同じ設定を見る）。--hidden で .github の YAML まで
+          # 拾う代わりに、.git と生成物はソース側で切り落とす。`path:$PWD` で
+          # flake を引くと作業ツリーごと取り込まれていて、バイナリの object を
+          # typos に見せると断片を綴りミスとして拾ってしまう。
+          checks.typos =
+            let
+              typosSrc = pkgs.lib.cleanSourceWith {
+                src = ./.;
+                filter =
+                  path: type:
+                  let
+                    rel = pkgs.lib.removePrefix (toString ./. + "/") (toString path);
+                  in
+                  !(
+                    builtins.match ".*\\.git(/.*)?" rel != null
+                    || builtins.match ".*node_modules(/.*)?" rel != null
+                    || builtins.match "(.*/)?dist(/.*)?" rel != null
+                    || builtins.match "(.*/)?result(-[0-9]+)?(/.*)?" rel != null
+                    || builtins.match ".*\\.vitepress/cache(/.*)?" rel != null
+                    || builtins.match "(.*/)?bun\\.(lock|nix)" rel != null
+                  );
+              };
+            in
+            pkgs.runCommand "otenki-typos"
+              {
+                nativeBuildInputs = [ pkgs.typos ];
+              }
+              ''
+                typos --hidden ${typosSrc}
+                touch $out
+              '';
+
           checks.typecheck = pkgs.stdenvNoCC.mkDerivation {
             pname = "otenki-typecheck";
             # ここにだけ bunDeps が入る。tsc が Bun のグローバル型と bun:test を
@@ -240,14 +273,17 @@
               pkgs.git
               # JSON の整形・検索 (places.json の確認用)
               pkgs.jq
+              # 綴りのチェック (_typos.toml が対象と除外を決める)
+              pkgs.typos
             ];
             shellHook = ''
-              echo "[devShell:otenki] bun $(bun --version), tsc $(tsc --version), fzf $(fzf --version)"
+              echo "[devShell:otenki] bun $(bun --version), tsc $(tsc --version), fzf $(fzf --version), typos $(typos --version)"
               echo ""
               echo "  Tasks:"
               echo "    bun test                    run tests"
               echo "    bun run typecheck           type check"
               echo "    bun run build               bundle to apps/otenki/dist/index.mjs"
+              echo "    bun run typos               spell check"
               echo "    bun run start -- <cmd>      run the CLI (dev mode)"
               echo "    nix run . -- <cmd>          run the Nix build"
               echo "    nix run .#update            refresh bun.nix after devDependency changes"

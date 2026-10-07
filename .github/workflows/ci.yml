@@ -61,6 +61,6 @@ jobs:
           extra_nix_config: |
             accept-flake-config = true
 
-      # checks.build / checks.tests / checks.typecheck / checks.treefmt
+      # checks.build / checks.tests / checks.typecheck / checks.typos / checks.treefmt
       - name: flake check
         run: nix flake check --accept-flake-config
