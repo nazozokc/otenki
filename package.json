@@ -12,10 +12,10 @@
     "apps/*"
   ],
   "scripts": {
-    "build": "bun run --filter @nazozokc-prod/otenki build",
-    "test": "bun run --filter @nazozokc-prod/otenki test",
-    "typecheck": "bun run --filter @nazozokc-prod/otenki typecheck",
-    "start": "bun run --filter @nazozokc-prod/otenki start --"
+    "build": "bun run --filter otenki-cli build",
+    "test": "bun run --filter otenki-cli test",
+    "typecheck": "bun run --filter otenki-cli typecheck",
+    "start": "bun run --filter otenki-cli start --"
   },
   "devDependencies": {
     "@types/bun": "1.4.2"

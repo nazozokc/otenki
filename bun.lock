@@ -9,10 +9,10 @@
       },
     },
     "apps/otenki": {
-      "name": "@nazozokc-prod/otenki",
-      "version": "0.2.2",
+      "name": "otenki-cli",
+      "version": "0.2.3",
       "bin": {
-        "otenki": "src/index.ts",
+        "otenki": "dist/index.mjs",
       },
       "devDependencies": {
         "tsdown": "^0.23.0",
@@ -21,8 +21,6 @@
     },
   },
   "packages": {
-    "@nazozokc-prod/otenki": ["@nazozokc-prod/otenki@workspace:apps/otenki"],
-
     "@oxc-project/types": ["@oxc-project/types@0.152.0", "", {}, "sha512-oM/5rLBm2tPkg0iBgkH/FOeR3PCDpY19GTgAZjMFM8h9WI9VW7cLgzp6nwtarYKmovavIQZ+Fe/RKX/8C8O/Rw=="],
 
     "@quansync/fs": ["@quansync/fs@1.1.0", "", { "dependencies": { "quansync": "^1.0.0" } }, "sha512-qAPG/t3HqML1TlN7sY/pTbEjzFVAKsMjNNMGheyDosro+kT4iw2KCUoHcVdmliwWjorm4elZbgNQyU2eD97eDg=="],
@@ -172,6 +170,8 @@
     "import-without-cache": ["import-without-cache@0.4.1", "", {}, "sha512-vXoV9PjKHEednCUu01e98TkImxy67e3BJXbTIOmIq4Hyzw3IAwYRcuPkfeTzJzwyyts4kjuA73x+pWJLc4f86A=="],
 
     "obug": ["obug@2.2.1", "", {}, "sha512-XrsrhT5sybtKI6wakr2SPOlGZWWYbUXZ7a0jT8/QOeAPau+1X/bSegNe5YR75oJmEZQbKningirmGOEJCIk61Q=="],
+
+    "otenki-cli": ["otenki-cli@workspace:apps/otenki"],
 
     "picomatch": ["picomatch@4.0.7", "", {}, "sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA=="],
 

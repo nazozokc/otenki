@@ -13,7 +13,6 @@
   ...
 }:
 {
-  "@nazozokc-prod/otenki" = copyPathToStore ./apps/otenki;
   "@oxc-project/types@0.152.0" = fetchurl {
     url = "https://registry.npmjs.org/@oxc-project/types/-/types-0.152.0.tgz";
     hash = "sha512-oM/5rLBm2tPkg0iBgkH/FOeR3PCDpY19GTgAZjMFM8h9WI9VW7cLgzp6nwtarYKmovavIQZ+Fe/RKX/8C8O/Rw==";
@@ -318,6 +317,7 @@
     url = "https://registry.npmjs.org/obug/-/obug-3.0.0.tgz";
     hash = "sha512-5vvB5+W7ePv+p3uqxi+RcW1XAzLW0/hxt3/4X4Lc4qHudzOhmBiBwOY6DRob4WnanAEGvNcLjF+KNOufrUoEQw==";
   };
+  "otenki-cli" = copyPathToStore ./apps/otenki;
   "picomatch@4.0.7" = fetchurl {
     url = "https://registry.npmjs.org/picomatch/-/picomatch-4.0.7.tgz";
     hash = "sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA==";

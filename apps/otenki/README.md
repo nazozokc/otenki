@@ -21,13 +21,13 @@ date        icon  weather                    temp  precip  prob       wind
 shebang asks for `bun` on `PATH`.
 
 ```sh
-bunx otenki today 函館
+bunx otenki-cli today 函館
 ```
 
 or install it:
 
 ```sh
-npm install -g otenki     # needs bun on PATH
+npm install -g otenki-cli     # needs bun on PATH
 ```
 
 If you have Nix, the flake is the better route and needs no Bun:

@@ -25,7 +25,7 @@ bun run start -- today 函館  # CLI を開発モードで実行
 bun run build               # apps/otenki/dist/index.mjs へバンドル（tsdown）
 ```
 
-ルートのスクリプトは `bun run --filter otenki …` でアプリ側へ渡します。単体のアプリだけを触るときは `apps/otenki` で直接実行してください。
+ルートのスクリプトは `bun run --filter otenki-cli …` でアプリ側へ渡します。単体のアプリだけを触るときは `apps/otenki` で直接実行してください。
 
 ```sh
 (cd apps/otenki && bun test)

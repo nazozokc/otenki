@@ -144,7 +144,7 @@ nix flake check             # build, tests and typecheck inside Nix
 nix fmt                     # nixfmt + prettier
 ```
 
-Each root script fans out with `bun run --filter otenki …`; run them from
+Each root script fans out with `bun run --filter otenki-cli …`; run them from
 `apps/otenki` directly when you want a single app.
 
 After changing dependencies, refresh the Nix dependency definition:
@@ -188,7 +188,7 @@ re-checks out the tagged commit rather than `main`, so a re-run cannot ship a
 version that drifted.
 
 ```console
-$ bunx otenki today 函館     # npm 配布（bun が PATH に要る）
+$ bunx otenki-cli today 函館     # npm 配布（bun が PATH に要る）
 ```
 
 ## Special Thanks

@@ -168,7 +168,7 @@ jobs:
         working-directory: ${{ env.WORKDIR }}
         run: |
           npm pack --pack-destination "$RUNNER_TEMP"
-          # ファイル名は scope 込み（nazozokc-prod-otenki-…）なので、
+          # ファイル名は otenki-cli-<version>.tgz だが、
           # glob は tgz 拡張子だけで合わせる。名前が変わっても壊れない。
           # multiline delimiter: ファイル名に改行が混じっても output 注入にならない。
           {
