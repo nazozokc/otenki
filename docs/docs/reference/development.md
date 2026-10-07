@@ -106,16 +106,20 @@ apps/otenki/test/geocode.test.ts   サフィックス展開と順位付け
 apps/otenki/test/fzf.test.ts       fzf の候補行と選択の突き合わせ
 apps/otenki/test/location.test.ts  座標と地名の振り分け
 apps/otenki/test/table.test.ts     表示幅と表の組版
+apps/otenki/test/cache.test.ts     キャッシュの有効期限と形状検証
+apps/otenki/test/sanitize.test.ts  制御シーケンスの除去
 apps/otenki/test/cli.test.ts       引数解析、ヘルプ、終了コード
 ```
 
-ネットワークは叩きません。対象のロジックは純関数だけです。
+ネットワークは叩きません。対象のロジックは純関数とローカルファイルの読み書きだけです。
 
 - `candidateQueries` 地名から作る問い合わせの一覧
 - `rankCandidates` feature code → 人口 → 名前 の並び替え
 - `resolveLocation` 座標か地名かの判定
 - `fzfChoices` と `matchChoice` fzf との受け渡し
 - `displayWidth` と `renderTable` CJK・絵文字・ANSI を含む列幅の計算
+- `sanitizeText` 外来文字列からの制御シーケンス除去
+- `cachedGeocode` 不正なキャッシュエントリをミスとして扱うこと
 
 表のテストは `NO_COLOR` と `process.stdout.isTTY` を明示的に固定します。`bun test` は PTY Sandbox どちらの上でも動くので、この 2 つを素直に読むと期待値が端末によって変わります。
 
@@ -131,6 +135,7 @@ apps/otenki/test/cli.test.ts       引数解析、ヘルプ、終了コード
 | `table.ts`         | 表の組版                                                      |
 | `location.ts`      | 引数を座標か地名に振り分け                                    |
 | `geocode.ts`       | サフィックス展開、候補の順位付け、地名ラベルの組み立て        |
+| `sanitize.ts`      | 外来文字列からの制御シーケンス除去                            |
 | `cache.ts`         | `$XDG_STATE_HOME` 配下の places.json の読み書きと 30 日の TTL |
 | `forecast.ts`      | Forecast API の要求と応答の型付け                             |
 | `today.ts`         | `today` の出力                                                |
