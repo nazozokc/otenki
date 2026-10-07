@@ -127,4 +127,20 @@ describe("clearCache", () => {
 
     expect(await Bun.file(cacheFile).json()).toEqual({});
   });
+
+  test("reports an unwritable location instead of claiming success", async () => {
+    // A regular file where the state directory should be: mkdir under it
+    // fails with ENOTDIR, which is the read-only-home case in disguise.
+    const asFile = join(stateHome, "not-a-dir");
+    writeFileSync(asFile, "x");
+    process.env.XDG_STATE_HOME = asFile;
+
+    try {
+      await expect(clearCache()).rejects.toThrow(
+        "キャッシュの消去に失敗しました",
+      );
+    } finally {
+      process.env.XDG_STATE_HOME = stateHome;
+    }
+  });
 });

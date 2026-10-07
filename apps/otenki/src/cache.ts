@@ -120,5 +120,14 @@ export const cachedGeocode = async (
 };
 
 export const clearCache = async (): Promise<void> => {
-  await Bun.write(cacheFile(), "{}");
+  try {
+    await Bun.write(cacheFile(), "{}");
+  } catch {
+    // writeCache is background saving and swallows; this is the command's
+    // whole job, so a read-only location must surface as a readable failure
+    // rather than a stack trace — and never as a false success.
+    throw new Error(
+      "キャッシュの消去に失敗しました（書き込み権限を確認してください）",
+    );
+  }
 };
