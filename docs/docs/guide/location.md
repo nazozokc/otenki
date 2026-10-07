@@ -7,16 +7,16 @@
 緯度と経度を 2 つ渡します。区切りはスペースでもカンマでも構いません。
 
 ```sh
-otenki today 35.69 139.69
-otenki today 35.69,139.69
+bunx otenki-cli today 35.69 139.69
+bunx otenki-cli today 35.69,139.69
 ```
 
 カンマ区切りは 1 引数なので、シェル側の引用符は不要です。数字が 2 つ揃えば座標として扱われます。
 
-1 つだけ数字を渡すと、座標とは見なされません。`otenki today 41` はたいてい打ち間違いなので、エラーにしています。
+1 つだけ数字を渡すと、座標とは見なされません。`bunx otenki-cli today 41` はたいてい打ち間違いなので、エラーにしています。
 
 ```console
-$ otenki today 41
+$ bunx otenki-cli today 41
 ✗ 座標の指定が不正です: 41（緯度と経度を2つ指定してください）
 ```
 
@@ -25,8 +25,8 @@ $ otenki today 41
 地名はそのまま渡します。空白を含む語も 1 つの地名として扱われます。
 
 ```sh
-otenki today 函館
-otenki today 横浜市 神奈川
+bunx otenki-cli today 函館
+bunx otenki-cli today 横浜市 神奈川
 ```
 
 Geocoding API に投げる前に、`県 都 府 市 町 村` のサフィックスを両方向に振ります。`県 都 府 市 町 村` の順に付け足し、末尾のサフィックスは剥がした版も試します。最大 14 通りの問い合わせを並行で投げて、結果を 1 つにまとめます。
@@ -52,7 +52,7 @@ Geocoding API は、1 レコードにつき名前 1 つしか索引しません�
 既定では順位の一番上が選ばれます。同率なら feature code、人口、名前順で決まります。
 
 ```console
-$ otenki locate 横浜
+$ bunx otenki-cli locate 横浜
 横浜市 神奈川県
 35.43333, 139.65000
 PPLA · 神奈川県 · 日本 · 標高21m
@@ -61,13 +61,13 @@ PPLA · 神奈川県 · 日本 · 標高21m
 全部の候補を見たい場合は `--all` を付けます。
 
 ```sh
-otenki locate 横浜 --all
+bunx otenki-cli locate 横浜 --all
 ```
 
 自分で選びたい場合は `--pick` です。`fzf` が必要で、Ctrl-C で閉じると順位の一番上の場所に戻ります。
 
 ```sh
-otenki locate 横浜 --pick
+bunx otenki-cli locate 横浜 --pick
 ```
 
 ## 47 都道府県
@@ -86,7 +86,7 @@ otenki locate 横浜 --pick
 `高知` は `高知市` でも `高知県` でも引けません。この geocoder の索引に載っていないためで、座標を渡してください。
 
 ```sh
-otenki today 32.98880 132.55970
+bunx otenki-cli today 32.98880 132.55970
 ```
 
 ## キャッシュ
@@ -96,7 +96,7 @@ otenki today 32.98880 132.55970
 同じ場所を 2 回目以降引くとネットワークに出ないので、1.5 秒程度から 0.08 秒程度に縮みます。
 
 ```console
-$ otenki cache --clear
+$ bunx otenki-cli cache --clear
 キャッシュを消去しました
 ```
 

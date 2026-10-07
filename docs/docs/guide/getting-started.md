@@ -4,12 +4,26 @@
 
 ## 必要なもの
 
-- [Bun](https://bun.sh) 1.4 以上（ソースから実行する場合）
+- [Bun](https://bun.sh) 1.4 以上（ソースから、または npm から実行する場合）
 - Linux / macOS。Bun が動く環境ならどの OS でも動きます
 
 Nix を使う場合は Bun を用意する必要はありません。依存は flake が解決します。
 
 ## インストール
+
+### npm から
+
+リポジトリは要りません。Bun があれば、その場で実行できます。
+
+```sh
+bunx otenki-cli today 函館
+```
+
+常用するならグローバルに入れて、`otenki` という名前で呼びます。
+
+```sh
+npm install -g otenki-cli
+```
 
 ### Nix
 
@@ -49,7 +63,7 @@ bun run build
 ## 最初の一回
 
 ```console
-$ otenki today 函館
+$ bunx otenki-cli today 函館
 ☀️ 13.8°C  函館市 北海道
 2026-10-04 22:45 · 快晴 · 体感 12.1°C · 風 9.1 km/h · 湿度 72% · 降水 0.0 mm
 ```
@@ -57,7 +71,7 @@ $ otenki today 函館
 地名で足りるなら、座標への変換は自動で走ります。
 
 ```console
-$ otenki today 横浜市 神奈川
+$ bunx otenki-cli today 横浜市 神奈川
 🌤️ 24.1°C  横浜市 神奈川県
 ```
 
@@ -82,8 +96,8 @@ $ otenki today 横浜市 神奈川
 
 ```sh
 # ~/.bashrc や fish の設定
-alias tenki='otenki today'
-alias tenki_w='otenki weekly'
+alias tenki='bunx otenki-cli today'
+alias tenki_w='bunx otenki-cli weekly'
 ```
 
 地点を固定したい場合は、座標を環境変数に持ちます。
@@ -93,7 +107,7 @@ export HOME_TOKYO="35.6895 139.6917"
 ```
 
 ```sh
-otenki today $HOME_TOKYO
+bunx otenki-cli today $HOME_TOKYO
 ```
 
 ## 次に読む

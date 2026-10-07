@@ -31,6 +31,11 @@ features:
 ## インストール
 
 ```sh
+bunx otenki-cli today 函館        # その場で実行（bun が PATH に要る）
+npm install -g otenki-cli         # 入れる → 以降は `otenki` で呼べる
+```
+
+```sh
 nix run . -- today 函館          # インストールせずに実行
 nix profile install .            # プロファイルに登録
 ```
@@ -43,13 +48,13 @@ bun run start -- today 函館      # ソースから実行
 ## 使う
 
 ```sh
-otenki today 函館                # 現在の天気
-otenki tomorrow 横浜             # 明日の予報
-otenki weekly 35.69 139.69       # 7 日間。座標でもよい
-otenki monthly 東京              # 16 日間
-otenki locate 横浜 --all         # 同名地の候補を全部見る
-otenki locate 横浜 --pick        # fzf で選ぶ
-otenki today 横浜 --json         # スクリプト用に生 JSON
+bunx otenki-cli today 函館                # 現在の天気
+bunx otenki-cli tomorrow 横浜             # 明日の予報
+bunx otenki-cli weekly 35.69 139.69       # 7 日間。座標でもよい
+bunx otenki-cli monthly 東京              # 16 日間
+bunx otenki-cli locate 横浜 --all         # 同名地の候補を全部見る
+bunx otenki-cli locate 横浜 --pick        # fzf で選ぶ
+bunx otenki-cli today 横浜 --json         # スクリプト用に生 JSON
 ```
 
 ## 動く仕組み
@@ -57,7 +62,7 @@ otenki today 横浜 --json         # スクリプト用に生 JSON
 地名から天気までを、2 回の API 呼び出しで片付ける。キャッシュが効くと 2 回目以降は 1.5 秒から 0.08 秒になる。
 
 ```text
-otenki today 函館
+bunx otenki-cli today 函館
   │
   ├─ Geocoding API ── 函館 / 函館県 / 函館都 / 函館府 / 函館市 / 函館町 / 函館村
   │                          feature code → 人口 の順で並べる
@@ -71,7 +76,7 @@ otenki today 函館
 
 - `monthly` は 16 日で止まる。Forecast API が `forecast_days` 17 以上を拒否するため。
 - 47 都道府県のうち 41 個は素の県名で引ける。残りは県庁所在地の市名で。
-- `高知` は地名で引けない。`otenki today 32.98880 132.55970` と座標を渡す。
+- `高知` は地名で引けない。`bunx otenki-cli today 32.98880 132.55970` と座標を渡す。
 - 同名の地名は `横浜` のように複数ある。`--all` で確認し、`--pick` で選ぶ。
 
 詳しくは [コマンド一覧](/reference/commands) と [トラブルシューティング](/reference/troubleshooting) に書いた。

@@ -3,7 +3,7 @@
 ## 地名が見つからない
 
 ```console
-$ otenki today 不存在の地名
+$ bunx otenki-cli today 不存在の地名
 ✗ "不存在の地名" の場所が見つかりませんでした
 ```
 
@@ -15,7 +15,7 @@ Geocoding API は索引の綴り方に弱いので、次の順に試します。
 4. 座標で直接指定する
 
 ```sh
-otenki today 41.77583 140.73666
+bunx otenki-cli today 41.77583 140.73666
 ```
 
 `locate --all` で候補を全部確認し、`--pick` で選ぶ方法もあります。詳しくは [地名の指定](/guide/location) に書きました。
@@ -25,7 +25,7 @@ otenki today 41.77583 140.73666
 同名の地名は複数存在します。順位は feature code、人口、名前の順です。
 
 ```console
-$ otenki locate 高崎
+$ bunx otenki-cli locate 高崎
 高崎市 群馬県
 36.10333, 139.03375
 PPLA · 群馬県 · 日本 · 標高360m
@@ -42,7 +42,7 @@ PPLA · 群馬県 · 日本 · 標高360m
 ## fzf が入っていない
 
 ```console
-$ otenki locate 横浜 --pick
+$ bunx otenki-cli locate 横浜 --pick
 ✗ fzf がインストールされていません
 ```
 
@@ -63,7 +63,7 @@ brew install fzf
 地名キャッシュが効いていない可能性があります。初回はサフィックス展開のために複数回のリクエストを並行で投げます。
 
 ```sh
-otenki cache --clear
+bunx otenki-cli cache --clear
 ```
 
 2 回目以降は `$XDG_STATE_HOME/otenki/places.json` から読むので、短くなります。天気側は毎回ネットワークに出ます。
@@ -71,12 +71,12 @@ otenki cache --clear
 ## 通信に失敗する
 
 ```console
-$ otenki today 函館
+$ bunx otenki-cli today 函館
 ✗ api.open-meteo.com へのリクエストに失敗しました
 ```
 
 ```console
-$ otenki today 函館
+$ bunx otenki-cli today 函館
 ✗ api.open-meteo.com が HTTP 429 を返しました
 ```
 
@@ -89,8 +89,8 @@ $ otenki today 函館
 色は stdout が TTY のときだけ付きます。パイプへ渡した状態では出ません。
 
 ```sh
-otenki today 函館 | cat      # 色なし
-NO_COLOR=1 otenki today 函館  # 色なし
+bunx otenki-cli today 函館 | cat      # 色なし
+NO_COLOR=1 bunx otenki-cli today 函館  # 色なし
 ```
 
 `--json` を使うと、表も色も出力されません。
@@ -98,7 +98,7 @@ NO_COLOR=1 otenki today 函館  # 色なし
 ## キャッシュの場所
 
 ```console
-$ otenki cache
+$ bunx otenki-cli cache
 cache: --clear を指定してください
 ```
 
@@ -113,8 +113,8 @@ jq 'keys' "${XDG_STATE_HOME:-$HOME/.local/state}/otenki/places.json"
 ## バージョンを確認する
 
 ```console
-$ otenki --version
-0.1.0
+$ bunx otenki-cli --version
+0.2.4
 ```
 
 `OTENKI_VERSION` が設定されていれば、それが優先されます。Nix ビルドではパッケージングのときにこの値が焼き込まれます。

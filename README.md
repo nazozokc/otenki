@@ -4,12 +4,12 @@ A terminal weather CLI. Give it a place name — a Japanese prefecture, a city, 
 anything else on earth — and it resolves the coordinates and prints the forecast.
 
 ```console
-$ otenki locate 函館
+$ bunx otenki-cli locate 函館
 函館市 北海道
 41.77583, 140.73666
 PPLA2 · 北海道 · 日本 · 標高5m
 
-$ otenki today 函館
+$ bunx otenki-cli today 函館
 ☀️ 13.8°C  函館市 北海道
 2026-10-04 22:45 · 快晴 · 体感 12.1°C · 風 9.1 km/h · 湿度 72% · 降水 0.0 mm
 ```
@@ -18,6 +18,14 @@ Full documentation: <https://nazozokc.github.io/otenki/> — sources in
 [`docs/`](docs/), built with VitePress (`cd docs && bun run dev`).
 
 ## Install
+
+From npm — no checkout needed, but Bun must be on `PATH` because the bin is a
+single Bun script:
+
+```sh
+bunx otenki-cli today 函館     # run without installing
+npm install -g otenki-cli      # or install it, then call it `otenki …`
+```
 
 With Nix, from a checkout:
 
@@ -55,17 +63,17 @@ Every weather command accepts a location either as a place name or as a
 coordinate pair, and every command takes `--json` for scripting.
 
 ```sh
-otenki today 横浜            # by name
-otenki today 横浜市 神奈川     # name plus prefecture, still one string
-otenki today 35.69 139.69    # latitude longitude
-otenki today 35.69,139.69    # same, comma separated
-otenki locate 横浜 --all     # every geocoder candidate, not just the best
-otenki locate 横浜 --pick    # choose between candidates with fzf
-otenki cache --clear         # forget every cached lookup
+bunx otenki-cli today 横浜            # by name
+bunx otenki-cli today 横浜市 神奈川     # name plus prefecture, still one string
+bunx otenki-cli today 35.69 139.69    # latitude longitude
+bunx otenki-cli today 35.69,139.69    # same, comma separated
+bunx otenki-cli locate 横浜 --all     # every geocoder candidate, not just the best
+bunx otenki-cli locate 横浜 --pick    # choose between candidates with fzf
+bunx otenki-cli cache --clear         # forget every cached lookup
 ```
 
 ```console
-$ otenki locate --json 横浜
+$ bunx otenki-cli locate --json 横浜
 {
   "id": 1848352,
   "name": "横浜市",
@@ -85,7 +93,7 @@ gives plain text.
 ## How a lookup works
 
 ```
-otenki today 函館
+bunx otenki-cli today 函館
   │
   ├─ Geocoding API ── 函館
   │                   → 41.77583, 140.73666
@@ -124,7 +132,7 @@ which takes a repeat lookup from about 1.5 s to about 0.08 s.
   exists to append. Five work under their prefectural capital: `盛岡市`,
   `前橋市`, `名古屋市`, `大津市`, `松山市`.
 - **`高知` is unreachable by name entirely**, including `高知市` and `高知県`. Pass
-  coordinates instead: `otenki today 32.98880 132.55970`.
+  coordinates instead: `bunx otenki-cli today 32.98880 132.55970`.
 - **Ambiguous names need `--pick`.** `横浜` also exists in Aomori, Fukuoka and
   Kumamoto. Ranking picks the most populous match, which is usually right; use
   `--all` to see the rest or `--pick` to choose. `fzf` is optional — without it

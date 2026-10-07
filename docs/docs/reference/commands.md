@@ -15,13 +15,13 @@
 現在の天気。
 
 ```sh
-otenki today <location...>
+bunx otenki-cli today <location...>
 ```
 
 2 行で出します。表の 1 行が上の 2 行と同じ数字を繰り返していたので、桁の箱は使っていません。
 
 ```console
-$ otenki today 函館
+$ bunx otenki-cli today 函館
 ☀️ 13.8°C  函館市 北海道
 2026-10-04 22:45 · 快晴 · 体感 12.1°C · 風 9.1 km/h · 湿度 72% · 降水 0.0 mm
 ```
@@ -35,11 +35,11 @@ $ otenki today 函館
 明日の予報。内部的には 2 日分を要求し、2 日目を使います。
 
 ```sh
-otenki tomorrow <location...>
+bunx otenki-cli tomorrow <location...>
 ```
 
 ```console
-$ otenki tomorrow 横浜
+$ bunx otenki-cli tomorrow 横浜
 🌤️ 22.4°C ~ 16.1°C  横浜市 神奈川県
 10-06 (水) · 晴れ時々くもり · 降水 0.4 mm (確率 30%) · 風 12.3 km/h
 ```
@@ -53,13 +53,13 @@ $ otenki tomorrow 横浜
 7 日間の予報。
 
 ```sh
-otenki weekly <location...>
+bunx otenki-cli weekly <location...>
 ```
 
 罫線はヘッダーの真下に入る 1 行だけです。列は名前・日付が左、数字が右に寄るので、桁がそろって読み比較できます。
 
 ```console
-$ otenki weekly 横浜
+$ bunx otenki-cli weekly 横浜
 横浜市 神奈川県 — 7日間予報
 date        icon  weather                    temp  precip  prob       wind
 ──────────────────────────────────────────────────────────────────────────
@@ -78,11 +78,11 @@ date        icon  weather                    temp  precip  prob       wind
 16 日間の予報。
 
 ```sh
-otenki monthly <location...>
+bunx otenki-cli monthly <location...>
 ```
 
 ```console
-$ otenki monthly 横浜
+$ bunx otenki-cli monthly 横浜
 横浜市 神奈川県 — 16日間予報 (API上限 16日)
 date        icon  weather                    temp   precip  prob       wind
 ───────────────────────────────────────────────────────────────────────────
@@ -101,11 +101,11 @@ date        icon  weather                    temp   precip  prob       wind
 地名を座標に解決します。天気は引きません。
 
 ```sh
-otenki locate <place...>
+bunx otenki-cli locate <place...>
 ```
 
 ```console
-$ otenki locate 横浜
+$ bunx otenki-cli locate 横浜
 横浜市 神奈川県
 35.43333, 139.65000
 PPLA · 神奈川県 · 日本 · 標高21m
@@ -114,7 +114,7 @@ PPLA · 神奈川県 · 日本 · 標高21m
 `--all` を付けると候補が全部表に出ます。順位の上から並ぶので、先頭が既定の候補です。
 
 ```console
-$ otenki locate 横浜 --all
+$ bunx otenki-cli locate 横浜 --all
 横浜市 神奈川県
 35.43333, 139.65000
 PPLA · 神奈川県 · 日本 · 標高21m
@@ -144,11 +144,11 @@ name              admin1         lat        lon  feature          pop
 地名キャッシュの操作。現状は `--clear` のみです。
 
 ```sh
-otenki cache --clear
+bunx otenki-cli cache --clear
 ```
 
 ```console
-$ otenki cache --clear
+$ bunx otenki-cli cache --clear
 キャッシュを消去しました
 ```
 
@@ -161,7 +161,7 @@ $ otenki cache --clear
 エラーは stderr に `✗ ` を付けて出力され、終了コードは `1` です。
 
 ```console
-$ otenki today mars
+$ bunx otenki-cli today mars
 ✗ "mars" の場所が見つかりませんでした
 ```
 
