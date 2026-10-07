@@ -1,6 +1,6 @@
 {
   "name": "otenki-cli",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "view weather for any place on earth from the terminal",
   "module": "dist/index.mjs",
   "bin": {
