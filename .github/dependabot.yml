@@ -1,0 +1,21 @@
+version: 2
+updates:
+  # GitHub Actions の更新。uses: が SHA ピン + バージョンコメントの形なら
+  # コメントのタグへ更新する PR を出す。
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # ルート bun.lock（apps/* ワークスペース込み）。runtime 依存は 0 なので
+  # 実体は devDependencies（tsdown, typescript, @types/bun）。
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # docs は独立パッケージ（独自 bun.lock）。vitepress / vue がここに当たる。
+  - package-ecosystem: "npm"
+    directory: "/docs"
+    schedule:
+      interval: "weekly"
