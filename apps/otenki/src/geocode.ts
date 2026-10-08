@@ -62,12 +62,31 @@ const featureRank = (featureCode: string | undefined): number => {
   return 8;
 };
 
-/** Exported for tests: both are pure and carry the trickiest logic here. */
+/** A country capital outranks every same-named ordinary city. */
+const capitalFirst = (featureCode: string | undefined): number =>
+  featureCode === "PPLC" ? 0 : 1;
+
+/** Parks, stations and islands stay below cities whatever their figures. */
+const populatedFirst = (featureCode: string | undefined): number =>
+  featureCode !== undefined && featureCode.startsWith("PPL") ? 0 : 1;
+
+/**
+ * Exported for tests: both are pure and carry the trickiest logic here.
+ *
+ * A weather lookup wants the place people mean, so population decides long
+ * before the feature code does: `New York` has to reach the 8.8 million person
+ * city rather than York, Nebraska's 7,864, however proudly GeoNames ranks the
+ * latter as an admin seat. The capitals-only rule comes first for the same
+ * reason `ボーン` means Bonn the city and not a same-named village, and the
+ * feature code only breaks ties population left even.
+ */
 export const rankCandidates = (places: GeocodeResult[]): GeocodeResult[] =>
   [...places].sort(
     (a, b) =>
-      featureRank(a.feature_code) - featureRank(b.feature_code) ||
+      capitalFirst(a.feature_code) - capitalFirst(b.feature_code) ||
+      populatedFirst(a.feature_code) - populatedFirst(b.feature_code) ||
       (b.population ?? 0) - (a.population ?? 0) ||
+      featureRank(a.feature_code) - featureRank(b.feature_code) ||
       a.name.localeCompare(b.name, "ja"),
   );
 
@@ -97,11 +116,12 @@ export const candidateQueries = (query: string): string[] => {
 const search = async (
   name: string,
   count: number,
+  language: string,
 ): Promise<GeocodeResult[]> => {
   const url = new URL(GEOCODING_ENDPOINT);
   url.searchParams.set("name", name);
   url.searchParams.set("count", String(count));
-  url.searchParams.set("language", "ja");
+  url.searchParams.set("language", language);
   url.searchParams.set("format", "json");
   // Deliberately no countryCode filter. Kanji is shared with Chinese and kana
   // turns up in Korean names, so scoping to JP hides 上海 and 서울 entirely.
@@ -132,27 +152,40 @@ export const queryTokens = (query: string): string[] =>
     .split(/\s+/)
     .filter((token) => token !== "");
 
+type FilterField = { text: string; reverse: boolean };
+
 /**
  * Fields a filter token is allowed to appear in. The API returns these in the
  * requested language, so `country` is 日本 under `language=ja` and Japan under
  * `language=en`; matching against every field keeps either spelling working.
- * Exported for tests.
+ * `reverse` says whether the token may be longer than the field, which only
+ * makes sense for the free text fields — see `matchesTokens`.
  */
-const filterFields = (place: GeocodeResult): string[] =>
-  [
-    place.name,
-    place.admin1,
-    place.admin2,
-    place.country,
-    place.country_code,
-  ].filter((field): field is string => field !== undefined && field !== "");
+const filterFields = (place: GeocodeResult): FilterField[] => {
+  const text = [place.name, place.admin1, place.admin2, place.country]
+    .filter((field): field is string => field !== undefined && field !== "")
+    .map((field) => ({ text: field, reverse: true }));
+
+  const code =
+    place.country_code !== undefined && place.country_code !== ""
+      ? [{ text: place.country_code, reverse: false }]
+      : [];
+
+  return [...text, ...code];
+};
 
 /**
- * A token matches when it is contained in a field or the other way round:
- * `神奈川` has to reach `神奈川県` and `神奈川県` has to reach `神奈川`, since
- * the caller and the index disagree about whether the suffix is spelled out.
- * Case folding only affects ASCII, so `Tokyo` and `tokyo` compare equal.
- * Exported for tests.
+ * Exported for tests. A token matches when it is contained in a field or the
+ * other way round: `神奈川` has to reach `神奈川県` and `神奈川県` has to reach
+ * `神奈川`, since the caller and the index disagree about whether the suffix
+ * is spelled out. Case folding only affects ASCII, so `Tokyo` and `tokyo`
+ * compare equal.
+ *
+ * The country code is the one exception: it is two letters, so the reverse
+ * direction finds it inside almost any longer token — `Angeles` contains the
+ * `NG` Lagos offers, which is how `today Los Angeles` ended up in Nigeria.
+ * The forward direction survives: it asks the token to contain the code, so
+ * `JP` and `US` still narrow while `Angeles` cannot.
  */
 export const matchesTokens = (
   place: GeocodeResult,
@@ -160,9 +193,9 @@ export const matchesTokens = (
 ): boolean =>
   tokens.every((token) => {
     const needle = token.toLowerCase();
-    return filterFields(place).some((field) => {
-      const hay = field.toLowerCase();
-      return hay.includes(needle) || needle.includes(hay);
+    return filterFields(place).some(({ text, reverse }) => {
+      const hay = text.toLowerCase();
+      return hay.includes(needle) || (reverse && needle.includes(hay));
     });
   });
 
@@ -193,11 +226,12 @@ const sanitizePlace = (place: GeocodeResult): GeocodeResult => ({
 const ladder = async (
   name: string,
   count: number,
+  language: string,
 ): Promise<GeocodeResult[]> => {
   // The variants are independent, so issue them at once rather than paying a
   // round trip each: the full ladder is otherwise up to 14 sequential requests.
   const responses = await Promise.all(
-    candidateQueries(name).map((query) => search(query, count)),
+    candidateQueries(name).map((query) => search(query, count, language)),
   );
 
   const found = new Map<number, GeocodeResult>();
@@ -237,9 +271,16 @@ export const geocode = async (
   query: string,
   count: number = DEFAULT_COUNT,
 ): Promise<GeocodeResult[]> => {
+  // The filter tokens are compared against whatever language the API answers
+  // in, so the two have to agree: `Los Angeles` needs `name` back as
+  // "Los Angeles" for the `Angeles` half to reach it, while `横浜 神奈川`
+  // needs `admin1` back as 神奈川県. One language per query, decided by the
+  // script the whole query is written in, keeps the pair matched.
+  const language = JAPANESE_SCRIPT.test(query) ? "ja" : "en";
+
   const results = await cachedGeocode(query, async () => {
     const tokens = queryTokens(query);
-    if (tokens.length < 2) return ladder(query, count);
+    if (tokens.length < 2) return ladder(query, count, language);
 
     // Both orders are searched and the survivors pooled rather than returning
     // whichever pass answers first: `神奈川 横浜市` has to reach 横浜市 even
@@ -261,7 +302,7 @@ export const geocode = async (
 
     const found = new Map<number, GeocodeResult>();
     for (const { primary, filters } of searches) {
-      for (const place of await ladder(primary, count)) {
+      for (const place of await ladder(primary, count, language)) {
         if (matchesTokens(place, filters)) found.set(place.id, place);
       }
     }

@@ -118,7 +118,7 @@ apps/otenki/test/support.ts        色の固定と共通のヘルパー（テス
 ネットワークは叩きません。対象のロジックは純関数とローカルファイルの読み書きだけです。
 
 - `candidateQueries` 地名から作る問い合わせの一覧
-- `rankCandidates` feature code → 人口 → 名前 の並び替え
+- `rankCandidates` 首都 → 集落地 → 人口 → feature code → 名前 の並び替え
 - `resolveLocation` 座標か地名かの判定
 - `fzfChoices` と `matchChoice` fzf との受け渡し
 - `displayWidth` と `renderTable` CJK・絵文字・ANSI を含む列幅の計算

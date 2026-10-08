@@ -64,7 +64,7 @@ export const formatHumidity = (value: Maybe): string =>
 export const formatPrecipitationProbability = (value: Maybe): string =>
   isMissing(value) ? "-" : `${Math.round(value)}%`;
 
-/** `2026-10-05T11:00` (already local time from the API) to `2026-10-05 11:00`. */
+/** `2026-10-05T11:00` (already local time from the API) to `2026-10-05 11`. */
 export const formatDateTime = (value: string): string =>
   value.replace("T", " ").replace(/:00$/, "");
 

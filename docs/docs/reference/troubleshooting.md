@@ -21,7 +21,7 @@ bunx otenki-cli today 41.77583 140.73666
 
 ## 別の自治体が引かれた
 
-同名の地名は複数存在します。順位は feature code、人口、名前の順です。
+同名の地名は複数存在します。順位は首都 → 集落地 → 人口 → feature code → 名前の順です。
 
 ```console
 $ bunx otenki-cli locate 高崎

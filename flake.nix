@@ -69,7 +69,16 @@
           };
           # バージョン情報源は apps/otenki/package.json だけ。この version は
           # publish.yml が release のタグから書き戻すので、常に公開した版と一致する。
-          version = (pkgs.lib.importJSON ./apps/otenki/package.json).version;
+          # そのまま makeWrapper のシェルに埋め込まれるので、sync-version と同じ
+          # 書式で検証してから渡す。builtins.match は文字列全体に対して走るため
+          # アノーチャは要らず、不正な版はビルドの早い段階で落ちる。
+          version =
+            let
+              raw = (pkgs.lib.importJSON ./apps/otenki/package.json).version;
+              pattern = "[0-9]+\\.[0-9]+\\.[0-9]+([+-][0-9A-Za-z.-]+)?";
+            in
+            assert builtins.isString raw && builtins.match pattern raw != null;
+            raw;
           bun2nix' = bun2nix.packages.${system}.bun2nix;
           # bun.nix から作った bun 互換キャッシュ（sandbox 内のオフライン install 用）。
           # 型チェックだけが使う: @types/bun は npm から入れないと tsc が Bun の

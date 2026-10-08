@@ -134,6 +134,20 @@ describe("forecast table", () => {
     for (const line of lines.slice(1)) expect(displayWidth(line)).toBe(grid);
   });
 
+  test("strips control sequences the API puts in a date", async () => {
+    // The date rides the table straight to the terminal, so a compromised
+    // API could smuggle an OSC title rewrite into it. The row shows the
+    // cleaned date instead.
+    const lines = await withColorAsync(false, () =>
+      renderLines(weekly, ["2026-10\u001B]0;pwn\u0007-07"]),
+    );
+    const text = lines.join("\n");
+
+    expect(text).not.toContain("\u001B");
+    expect(text).not.toContain("\u0007");
+    expect(text).toContain("10-07");
+  });
+
   test("bolds today's date so the forecast has a start", async () => {
     const lines = await withColorAsync(true, () =>
       renderLines(weekly, ["2026-10-07", "2026-10-08"]),

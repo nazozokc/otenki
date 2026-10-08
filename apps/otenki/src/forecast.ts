@@ -1,5 +1,6 @@
 import type { Units } from "./config.ts";
 import { fetchJson } from "./http.ts";
+import { sanitizeText } from "./sanitize.ts";
 import { apiLink } from "./style.ts";
 const FORECAST_ENDPOINT = "https://api.open-meteo.com/v1/forecast";
 
@@ -113,8 +114,13 @@ export const fetchCurrent = async (
     throw new ForecastError("Weather API が current データを返しませんでした");
   }
 
+  // `time` is printed as output by every command that fetches it, and it
+  // comes from the network: a compromised API could carry an OSC sequence or
+  // a newline into the date column. Control characters never belong in an ISO
+  // date, so both fetchCurrent and fetchDaily strip them at the source, the
+  // way geocode.ts sanitizes the place fields.
   return {
-    time: current.time,
+    time: sanitizeText(current.time),
     temperature: current.temperature_2m ?? Number.NaN,
     apparentTemperature: current.apparent_temperature ?? null,
     weatherCode: current.weather_code ?? -1,
@@ -156,7 +162,7 @@ export const fetchDaily = async (
     values?.[index] ?? null;
 
   return daily.time.map((time, index) => ({
-    time,
+    time: sanitizeText(time),
     weatherCode: at(daily.weather_code, index) ?? -1,
     temperatureMax: at(daily.temperature_2m_max, index),
     temperatureMin: at(daily.temperature_2m_min, index),

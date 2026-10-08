@@ -143,9 +143,10 @@ suffix happens to be spelled in the index:
 | `東京都` | ok         | —                                           |
 
 `locate` walks the suffixes in both directions (`県 都 府 市 町 村`, appended and
-stripped), issues the variants concurrently, and ranks the pooled results by
-GeoNames feature code and then population. That is what turns `横浜` into
-`横浜市 神奈川県` and `高崎` into `高崎市 群馬県`.
+stripped), issues the variants concurrently, and ranks the pooled results with
+country capitals first, other populated places next, and population deciding
+within those — parks, stations and islands never rise above a city. That is what
+turns `横浜` into `横浜市 神奈川県` and `高崎` into `高崎市 群馬県`.
 
 Resolved names are cached for 30 days under `$XDG_STATE_HOME/otenki/places.json`,
 which takes a repeat lookup from about 1.5 s to about 0.08 s.
@@ -163,8 +164,8 @@ which takes a repeat lookup from about 1.5 s to about 0.08 s.
   coordinates instead: `bunx otenki-cli today 32.98880 132.55970`.
 - **Ambiguous names need `--pick`.** `横浜` also exists in Aomori, Fukuoka and
   Kumamoto. Ranking picks the most populous match, which is usually right; use
-  `--all` to see the rest or `--pick` to choose. `fzf` is optional — without it
-  `--pick` falls back to the best match.
+  `--all` to see the rest or `--pick` to choose. `--pick` requires `fzf` —
+  without it the command reports the missing dependency instead of guessing.
 
 ## Development
 

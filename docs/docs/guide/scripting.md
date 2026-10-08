@@ -103,11 +103,11 @@ fi
 
 ## fzf と組み合わせる
 
-`locate --pick` はすでに fzf を呼びます。`--all` との組み合わせで、同じ地名から好きな場所を選べます。
+`locate --pick` はすでに fzf を呼びます。`--all` と組み合わせると、選んだあとに候補表も表示されます。
 
 ```sh
-# 候補をそのまま fzf へ渡す
-bunx otenki-cli locate 横浜 --all
+# fzf で選んでから、候補表も表示する
+bunx otenki-cli locate 横浜 --all --pick
 ```
 
 ## タイムゾーン
