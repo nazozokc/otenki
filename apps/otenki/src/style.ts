@@ -71,11 +71,14 @@ export const thunder = (text: string): string => paint(text, THUNDER);
 export const heavy = (text: string): string => paint(text, BOLD + ALERT);
 
 /**
- * The API link that produced the shown forecast, kept muted so the numbers
- * stay the story and the link is the footnote. Printed on stderr, where it
- * can be clicked or piped away without touching the output on stdout.
+ * The credit every command prints on stderr once its output is done: where the
+ * place names come from and where the forecast does. Muted so it reads as the
+ * footnote it is, and on stderr so `--json` and piped stdout never see it.
  */
-export const apiLink = (url: URL): string => dim(`API: ${url}`);
+export const credits = (): string =>
+  dim(
+    "Get Locate: https://www.geonames.org/\nGet Weather: https://open-meteo.com/",
+  );
 
 /** True when the helpers above actually emit escape sequences. */
 export const styled = (): boolean => enabled();

@@ -2,7 +2,7 @@ import { commandHelp, help } from "./cli.help.ts";
 import { type Command, isFlag, parseArgs, UsageError } from "./cli.parse.ts";
 import type { Config } from "./config.ts";
 import { sanitizeText } from "./sanitize.ts";
-import { error as styleError } from "./style.ts";
+import { credits, error as styleError } from "./style.ts";
 
 /**
  * Runs one command out of `argv` and returns the exit code. Errors go to stderr
@@ -152,6 +152,10 @@ export const dispatch = async (
     }
 
     await command.run(args, flags, config);
+    // The credit goes on after the output rather than before it, and on stderr
+    // so `--json` and piped stdout stay the command's own. A command that
+    // failed has printed nothing worth following with a credit.
+    console.error(credits());
     return 0;
   } catch (failure: unknown) {
     // The message may echo argv or an API field, so it gets the same pass as

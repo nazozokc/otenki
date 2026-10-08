@@ -1,7 +1,6 @@
 import type { Units } from "./config.ts";
 import { fetchJson } from "./http.ts";
 import { sanitizeText } from "./sanitize.ts";
-import { apiLink } from "./style.ts";
 const FORECAST_ENDPOINT = "https://api.open-meteo.com/v1/forecast";
 
 /** The Forecast API rejects `forecast_days` above 16. */
@@ -57,11 +56,6 @@ export class ForecastError extends Error {
 }
 
 const fetchForecast = async (url: URL): Promise<ForecastResponse> => {
-  // The exact URL the request goes out as: every variable, unit and day is in
-  // it, so clicking it in a terminal shows the same data on Open-Meteo's page.
-  // stderr keeps `--json` and piped stdout clean.
-  console.error(apiLink(url));
-
   const data = await fetchJson<ForecastResponse>(url);
   if (data.reason !== undefined) {
     throw new ForecastError(`Weather API エラー: ${data.reason}`);

@@ -54,9 +54,9 @@ Every weather command accepts a location as a place name or a coordinate pair,
 and every command takes `--json` for scripting. Output is coloured on a TTY and
 respects `NO_COLOR`.
 
-Each weather command also prints the exact API URL it used to stderr
-(`API: https://api.open-meteo.com/v1/forecast?...`), so the link is clickable
-and piped stdout stays clean.
+Every command also credits its data sources on stderr
+(`Get Locate: https://www.geonames.org/` and
+`Get Weather: https://open-meteo.com/`), so piped stdout stays clean.
 
 Defaults live in `$XDG_CONFIG_HOME/otenki/config.json` (falling back to
 `~/.config/otenki/config.json`): a default location, the command a bare

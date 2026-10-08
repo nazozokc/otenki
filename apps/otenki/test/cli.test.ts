@@ -8,8 +8,13 @@ import {
   type Flags,
 } from "../src/cli.parse.ts";
 import type { Config } from "../src/config.ts";
+import { withColorAsync } from "./support.ts";
 
 const noop = async (): Promise<void> => {};
+
+/** The credit dispatch prints on stderr once a command has run. */
+const CREDITS =
+  "Get Locate: https://www.geonames.org/\nGet Weather: https://open-meteo.com/";
 
 const commands: Command[] = [
   {
@@ -312,6 +317,32 @@ describe("dispatch", () => {
     expect(await dispatch([strict], ["cache"], "1.2.3")).toBe(1);
     expect(err[0]).toContain("--clear を指定してください");
     expect(err[0]).toContain("Usage: otenki cache");
+  });
+
+  test("prints the data source credit after every command's output", async () => {
+    const { out, err } = capture();
+
+    await withColorAsync(false, async () => {
+      expect(await dispatch(commands, ["today", "横浜"], "1.2.3")).toBe(0);
+      expect(await dispatch(commands, ["cache", "--clear"], "1.2.3")).toBe(0);
+    });
+
+    // stdout stays the command's own; the credit is one stderr block per run.
+    expect(out).toHaveLength(0);
+    expect(err).toEqual([CREDITS, CREDITS]);
+  });
+
+  test("prints no credit for help, the version, or a failed command", async () => {
+    const { err } = capture();
+
+    await withColorAsync(false, async () => {
+      expect(await dispatch(commands, ["--help"], "1.2.3")).toBe(0);
+      expect(await dispatch(commands, ["-V"], "1.2.3")).toBe(0);
+      // A command that printed no output has nothing to take credit for.
+      expect(await dispatch(commands, ["today"], "1.2.3")).toBe(1);
+    });
+
+    expect(err.some((line) => line.includes("Get Weather"))).toBe(false);
   });
 });
 

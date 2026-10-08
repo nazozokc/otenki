@@ -39,8 +39,8 @@ const renderLines = async (
   const log = spyOn(console, "log").mockImplementation((...args: unknown[]) => {
     out.push(...args.join(" ").split("\n"));
   });
-  // The API link goes to stderr; capturing it keeps the test log readable
-  // while the assertions below check it like any other output.
+  // Commands print nothing on stderr themselves — the credit belongs to
+  // dispatch — so this only silences a stray write and keeps the log readable.
   const err = spyOn(console, "error").mockImplementation(() => {});
   const network = spyOn(globalThis, "fetch").mockResolvedValue(
     new Response(JSON.stringify(forecast(times, weatherCode)), {
@@ -220,14 +220,14 @@ describe("config", () => {
     return { lines: out, url, err: errOut };
   };
 
-  test("prints the exact API link on stderr as a solid URL", async () => {
+  test("builds the request URL from the coordinates and the configured days", async () => {
     const { err, url } = await withColorAsync(false, () =>
       renderConfigured(weekly, ["2026-10-07", "2026-10-08"], { days: 5 }),
     );
 
-    // The link and the request are the same string, so clicking the line in a
-    // terminal shows exactly the data the command just asked for.
-    expect(err).toEqual([`API: ${url}`]);
+    // The command no longer prints the URL: the credit that follows its
+    // output comes from dispatch, so stderr here stays empty.
+    expect(err).toEqual([]);
     expect(url).toContain("https://api.open-meteo.com/v1/forecast?");
     expect(url).toContain("latitude=35.69");
     expect(url).toContain("longitude=139.69");
