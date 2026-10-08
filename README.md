@@ -58,10 +58,11 @@ built by tsdown, so a run loads a single module instead of the TypeScript source
 | `weekly`    | 7 day forecast                                 |
 | `fortnight` | 14 day forecast (see the note below)           |
 | `locate`    | resolve a place name to latitude and longitude |
-| `cache`     | inspect or drop the place name cache           |
+| `cache`     | manage the place name cache                    |
 
 Every weather command accepts a location either as a place name or as a
-coordinate pair, and every command takes `--json` for scripting.
+coordinate pair, and each of them — `locate` included — takes `--json` for
+scripting (`cache` is the one exception).
 
 ```sh
 bunx otenki-cli today 横浜            # by name
@@ -91,9 +92,14 @@ $ bunx otenki-cli locate --json 横浜
 Output is coloured on a TTY and respects `NO_COLOR`, so piping into another tool
 gives plain text.
 
-Every weather command prints the exact API URL it used to stderr, as a
-clickable `API: https://api.open-meteo.com/v1/forecast?...` line. Piped stdout
-and `--json` stay untouched.
+Every command finishes with a data source credit on stderr:
+
+```text
+Get Locate: https://www.geonames.org/
+Get Weather: https://open-meteo.com/
+```
+
+Piped stdout and `--json` stay untouched.
 
 ## Configuration
 

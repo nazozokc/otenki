@@ -65,7 +65,7 @@ bunx otenki-cli today 横浜 --json         # スクリプト用に生 JSON
 bunx otenki-cli today 函館
   │
   ├─ Geocoding API ── 函館 / 函館県 / 函館都 / 函館府 / 函館市 / 函館町 / 函館村
-  │                          feature code → 人口 の順で並べる
+  │                          首都 → 集落地 → 人口 → feature code の順で並べる
   │                   → 41.77583, 140.73666
   │
   └─ Forecast API ──── その座標の現在天気（timezone=auto）
@@ -75,7 +75,7 @@ bunx otenki-cli today 函館
 ## 前提と制約
 
 - 予報は 14 日で止まる。Forecast API の上限が 16 日で `forecast_days` 17 以上は拒否されるため、それより先は引けない。
-- 47 都道府県のうち 41 個は素の県名で引ける。残りは県庁所在地の市名で。
+- 47 都道府県のうち 41 個は素の県名で引ける。残り 5 つは県庁所在地の市名で引ける。
 - `高知` は地名で引けない。`bunx otenki-cli today 32.98880 132.55970` と座標を渡す。
 - 同名の地名は `横浜` のように複数ある。`--all` で確認し、`--pick` で選ぶ。
 

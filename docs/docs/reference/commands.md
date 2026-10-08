@@ -6,8 +6,9 @@
 | --------------- | -------------------------- |
 | `-V, --version` | バージョンを表示           |
 | `-h, --help`    | ヘルプを表示               |
-| `--json`        | 生 JSON を出力             |
 | `--no-config`   | 設定ファイルを読まずに実行 |
+
+`--json` は `today` `tomorrow` `weekly` `fortnight` `locate` にあります。`cache` は `--clear` だけです。
 
 `-V` は Nix ビルドで焼き込まれた `OTENKI_VERSION` を最優先し、無ければ `package.json` の `version` を読みます。
 
@@ -28,10 +29,11 @@ $ bunx otenki-cli today 函館
 函館市 北海道
 ☀️ 快晴  13.8℃  体感 12.1℃
 風 9.1 km/h · 湿度 72% · 降水 0.0 mm · 2026-10-04 22:45
-API: https://api.open-meteo.com/v1/forecast?latitude=41.77583&longitude=140.73666&timezone=auto&current=temperature_2m%2Capparent_temperature%2Cweather_code%2Cwind_speed_10m%2Crelative_humidity_2m%2Cprecipitation
+Get Locate: https://www.geonames.org/
+Get Weather: https://open-meteo.com/
 ```
 
-最後の `API:` 行は stderr へ出ます。実際に飛んだリクエストの URL そのもの（変数・単位・日数まで入っています）なので、端末でクリックすると同じデータが Open-Meteo のページで開けます。stderr なので、`--json` やパイプの出力は汚しません。
+最後の 2 行は stderr へ出ます。地名データの提供元（GeoNames）と予報の提供元（Open-Meteo）へのクレジットで、どのコマンドでも出力のあとに同じ 2 行が付きます。stderr なので、`--json` やパイプの出力は汚しません。
 
 | オプション | 内容           |
 | ---------- | -------------- |

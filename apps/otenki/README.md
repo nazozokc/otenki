@@ -48,11 +48,11 @@ nix profile install .
 | `weekly`    | 7 day forecast                                 |
 | `fortnight` | 14 day forecast (two weeks)                    |
 | `locate`    | resolve a place name to latitude and longitude |
-| `cache`     | inspect or drop the place name cache           |
+| `cache`     | manage the place name cache                    |
 
 Every weather command accepts a location as a place name or a coordinate pair,
-and every command takes `--json` for scripting. Output is coloured on a TTY and
-respects `NO_COLOR`.
+and each of them — `locate` included — takes `--json` for scripting (`cache`
+is the one exception). Output is coloured on a TTY and respects `NO_COLOR`.
 
 Every command also credits its data sources on stderr
 (`Get Locate: https://www.geonames.org/` and
