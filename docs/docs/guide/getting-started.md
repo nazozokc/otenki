@@ -64,15 +64,17 @@ bun run build
 
 ```console
 $ bunx otenki-cli today 函館
-☀️ 13.8°C  函館市 北海道
-2026-10-04 22:45 · 快晴 · 体感 12.1°C · 風 9.1 km/h · 湿度 72% · 降水 0.0 mm
+函館市 北海道
+☀️ 快晴  13.8℃  体感 12.1℃
+風 9.1 km/h · 湿度 72% · 降水 0.0 mm · 2026-10-04 22:45
 ```
 
 地名で足りるなら、座標への変換は自動で走ります。
 
 ```console
 $ bunx otenki-cli today 横浜市 神奈川
-🌤️ 24.1°C  横浜市 神奈川県
+横浜市 神奈川県
+🌤️ 晴れ時々くもり  24.1℃  体感 25.3℃
 ```
 
 ## コマンドの一覧
@@ -110,8 +112,34 @@ export HOME_TOKYO="35.6895 139.6917"
 bunx otenki-cli today $HOME_TOKYO
 ```
 
+## 設定ファイル
+
+地点とコマンドを固定するなら、設定ファイルが最短です。
+
+```sh
+mkdir -p ~/.config/otenki
+cat > ~/.config/otenki/config.json <<'EOF'
+{
+  "location": "函館",
+  "command": "today"
+}
+EOF
+```
+
+これで `otenki` だけで今日の天気が出ます。地点の引数もコマンド名も不要になります。
+
+```console
+$ otenki
+函館市 北海道
+☀️ 快晴  13.8℃  体感 12.1℃
+風 9.1 km/h · 湿度 72% · 降水 0.0 mm · 2026-10-04 22:45
+```
+
+単位（`°F`・`mph`）や予報日数もここで決められます。全キーと優先順位は [設定ファイル](/reference/config) を参照してください。
+
 ## 次に読む
 
 - 地名の指定で迷ったら → [地名の指定](/guide/location)
 - スクリプトに組み込むなら → [スクリプトから使う](/guide/scripting)
+- 地点や単位を固定したいなら → [設定ファイル](/reference/config)
 - エラーが出たときは → [トラブルシューティング](/reference/troubleshooting)

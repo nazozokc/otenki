@@ -30,3 +30,5 @@ neighbouring = "neighbouring"
 behaviour = "behaviour"
 # A deliberate misspelling: the unknown-command tests feed a broken name.
 temprature = "temprature"
+# Same deliberate misspelling, for the configured-command test.
+wekly = "wekly"

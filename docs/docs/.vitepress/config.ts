@@ -92,6 +92,7 @@ export default defineConfig({
           text: "リファレンス",
           items: [
             { text: "コマンド一覧", link: "/reference/commands" },
+            { text: "設定ファイル", link: "/reference/config" },
             { text: "天気コード", link: "/reference/weather-codes" },
             {
               text: "トラブルシューティング",

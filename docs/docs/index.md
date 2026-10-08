@@ -69,7 +69,7 @@ bunx otenki-cli today 函館
   │                   → 41.77583, 140.73666
   │
   └─ Forecast API ──── その座標の現在天気（timezone=auto）
-                   → ☀️ 13.8°C
+                   → ☀️ 快晴 13.8℃
 ```
 
 ## 前提と制約

@@ -5,6 +5,8 @@
  * keeps the runtime free of dependencies and the behaviour completely legible.
  */
 
+import type { Config } from "./config.ts";
+
 /** `flag` is the long name without the dashes, so `--json` is `{ flag: "json" }`. */
 export type Option = {
   flag: string;
@@ -27,7 +29,8 @@ export type Command = {
   /** Omitted for commands that take no positional argument. */
   argument?: Argument;
   options: Option[];
-  run: (args: string[], flags: Flags) => Promise<void>;
+  /** Commands that ignore the config take fewer parameters, which is fine. */
+  run: (args: string[], flags: Flags, config: Config) => Promise<void>;
 };
 
 /** A failure the user can fix: bad flag, unknown command, missing argument. */

@@ -23,12 +23,12 @@ const detail = (place: GeocodeResult): string =>
 
 /** Names and codes read left to right; the three measurements line up on the right. */
 const COLUMNS: Column[] = [
-  { header: "name" },
-  { header: "admin1" },
-  { header: "lat", align: "right" },
-  { header: "lon", align: "right" },
-  { header: "feature" },
-  { header: "pop", align: "right" },
+  { header: "地名" },
+  { header: "都道府県" },
+  { header: "緯度", align: "right" },
+  { header: "経度", align: "right" },
+  { header: "種別" },
+  { header: "人口", align: "right" },
 ];
 
 const renderPlaces = (places: GeocodeResult[]): string =>

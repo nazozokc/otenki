@@ -10,8 +10,9 @@ $ bunx otenki-cli locate 函館
 PPLA2 · 北海道 · 日本 · 標高5m
 
 $ bunx otenki-cli today 函館
-☀️ 13.8°C  函館市 北海道
-2026-10-04 22:45 · 快晴 · 体感 12.1°C · 風 9.1 km/h · 湿度 72% · 降水 0.0 mm
+函館市 北海道
+☀️ 快晴  13.8℃  体感 12.1℃
+風 9.1 km/h · 湿度 72% · 降水 0.0 mm · 2026-10-04 22:45
 ```
 
 Full documentation: <https://nazozokc.github.io/otenki/> — sources in
@@ -90,6 +91,33 @@ $ bunx otenki-cli locate --json 横浜
 Output is coloured on a TTY and respects `NO_COLOR`, so piping into another tool
 gives plain text.
 
+Every weather command prints the exact API URL it used to stderr, as a
+clickable `API: https://api.open-meteo.com/v1/forecast?...` line. Piped stdout
+and `--json` stay untouched.
+
+## Configuration
+
+Every setting is optional. Put defaults in
+`$XDG_CONFIG_HOME/otenki/config.json` (falling back to
+`~/.config/otenki/config.json`):
+
+```json
+{
+  "location": "函館",
+  "command": "today",
+  "color": "auto",
+  "units": "metric",
+  "days": 7
+}
+```
+
+With that file, a bare `otenki` runs `today` for 函館. An argument on the
+command line always beats the config, and `--no-config` skips the file
+entirely. `units: "imperial"` switches the API query and the printed units to
+°F / mph / in; `days` sets the length of `weekly` and `fortnight` (1-16).
+
+Full reference: <https://nazozokc.github.io/otenki/reference/config>
+
 ## How a lookup works
 
 ```
@@ -99,7 +127,7 @@ bunx otenki-cli today 函館
   │                   → 41.77583, 140.73666
   │
   └─ Weather API ──── current weather for those coordinates
-                   → ☀️ 13.8°C
+                   → ☀️ 快晴 13.8℃
 ```
 
 The geocoder is the awkward half. It indexes one name per GeoNames record and

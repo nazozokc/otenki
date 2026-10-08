@@ -18,6 +18,10 @@ const ANSI = /\u001B\[[0-9;]*m/g;
  */
 const WIDE: ReadonlyArray<readonly [number, number]> = [
   [0x1100, 0x115f], // Hangul Jamo
+  // U+2103 ℃: East Asian Ambiguous rather than Wide, yet Japanese terminals
+  // render the unit glyph fullwidth. The table has to measure what the
+  // terminal draws, so it joins the wide list over the spec's objection.
+  [0x2103, 0x2103], // ℃
   [0x231a, 0x231b], // ⌚ ⌛
   [0x2329, 0x232a], // ⟨ ⟩
   [0x23e9, 0x23ec], // ⏩ ⏪ ⏫ ⏬

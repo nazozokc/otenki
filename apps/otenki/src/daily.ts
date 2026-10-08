@@ -1,41 +1,63 @@
+import type { Config, Units } from "./config.ts";
 import {
   formatDay,
   formatPrecipitation,
   formatPrecipitationProbability,
+  formatTemperature,
   formatTemperatureRange,
   formatWindSpeed,
 } from "./format.ts";
 import { fetchDaily, type DailyWeather } from "./forecast.ts";
 import { resolveLocation } from "./location.ts";
-import { bold, dim, temperature } from "./style.ts";
+import { bold, dim, heavy, temperature, thunder, wet } from "./style.ts";
 import { renderTable, type Column } from "./table.ts";
 import { weatherIcon } from "./weather.icon.ts";
-import { weatherLabel } from "./weather.label.ts";
+import { weatherSeverity, weatherLabel } from "./weather.label.ts";
 
-/** Every measurement is a number, so every column but the first three is right aligned. */
+/**
+ * The icon rides inside the weather column rather than keeping one of its own:
+ * a whole column for a two-cell glyph buys nothing and adds an alignment the
+ * renderer can get wrong. Temperatures are split into the two numbers a table
+ * exists to compare, so each column can be right aligned down to its decimal
+ * point instead of carrying a `~` range as one opaque cell.
+ */
 const COLUMNS: Column[] = [
-  { header: "date" },
-  { header: "icon" },
-  { header: "weather" },
-  { header: "temp", align: "right" },
-  { header: "precip", align: "right" },
-  { header: "prob", align: "right" },
-  { header: "wind", align: "right" },
+  { header: "日付" },
+  { header: "天気" },
+  { header: "最低", align: "right" },
+  { header: "最高", align: "right" },
+  { header: "降水", align: "right" },
+  { header: "確率", align: "right" },
+  { header: "風速", align: "right" },
 ];
 
-const renderForecast = (days: DailyWeather[]): string =>
+/** The one cell whose colour carries meaning about the day itself. */
+const weatherCell = (weatherCode: number): string => {
+  const text = `${weatherIcon(weatherCode)} ${weatherLabel(weatherCode)}`;
+
+  switch (weatherSeverity(weatherCode)) {
+    case "thunder":
+      return thunder(text);
+    case "heavy":
+      return heavy(text);
+    default:
+      return text;
+  }
+};
+
+const renderForecast = (days: DailyWeather[], units: Units): string =>
   renderTable(
     COLUMNS,
-    days.map((day) => [
-      formatDay(day.time),
-      weatherIcon(day.weatherCode),
-      weatherLabel(day.weatherCode),
-      temperature(
-        formatTemperatureRange(day.temperatureMin, day.temperatureMax),
-      ),
-      formatPrecipitation(day.precipitationSum),
-      formatPrecipitationProbability(day.precipitationProbabilityMax),
-      formatWindSpeed(day.windSpeedMax),
+    days.map((day, index) => [
+      // Row 0 is today on both `weekly` and `fortnight`: the bold date marks
+      // where the forecast starts reading from.
+      index === 0 ? bold(formatDay(day.time)) : formatDay(day.time),
+      weatherCell(day.weatherCode),
+      formatTemperature(day.temperatureMin, units),
+      temperature(formatTemperature(day.temperatureMax, units)),
+      wet(formatPrecipitation(day.precipitationSum, units)),
+      wet(formatPrecipitationProbability(day.precipitationProbabilityMax)),
+      formatWindSpeed(day.windSpeedMax, units),
     ]),
   );
 
@@ -43,9 +65,16 @@ const renderForecast = (days: DailyWeather[]): string =>
 export const tomorrow = async (
   args: string[],
   options: { json?: boolean },
+  config: Config = {},
 ): Promise<void> => {
+  const units = config.units ?? "metric";
   const location = await resolveLocation(args);
-  const days = await fetchDaily(location.latitude, location.longitude, 2);
+  const days = await fetchDaily(
+    location.latitude,
+    location.longitude,
+    2,
+    units,
+  );
   const day = days[1] ?? days[0];
 
   if (day === undefined) {
@@ -57,12 +86,14 @@ export const tomorrow = async (
     return;
   }
 
+  // The same three levels as `today`: place, reading, supporting facts.
+  console.log(bold(location.label));
   console.log(
-    `${weatherIcon(day.weatherCode)} ${temperature(formatTemperatureRange(day.temperatureMin, day.temperatureMax))}  ${bold(location.label)}`,
+    `${weatherIcon(day.weatherCode)} ${weatherLabel(day.weatherCode)}  ${temperature(formatTemperatureRange(day.temperatureMin, day.temperatureMax, units))}`,
   );
   console.log(
     dim(
-      `${formatDay(day.time)} · ${weatherLabel(day.weatherCode)} · 降水 ${formatPrecipitation(day.precipitationSum)} (確率 ${formatPrecipitationProbability(day.precipitationProbabilityMax)}) · 風 ${formatWindSpeed(day.windSpeedMax)}`,
+      `${formatDay(day.time)} · 降水 ${formatPrecipitation(day.precipitationSum, units)}（確率 ${formatPrecipitationProbability(day.precipitationProbabilityMax)}） · 風 ${formatWindSpeed(day.windSpeedMax, units)}`,
     ),
   );
 };
@@ -70,9 +101,16 @@ export const tomorrow = async (
 export const weekly = async (
   args: string[],
   options: { json?: boolean },
+  config: Config = {},
 ): Promise<void> => {
+  const units = config.units ?? "metric";
   const location = await resolveLocation(args);
-  const days = await fetchDaily(location.latitude, location.longitude, 7);
+  const days = await fetchDaily(
+    location.latitude,
+    location.longitude,
+    config.days ?? 7,
+    units,
+  );
 
   if (options.json === true) {
     console.log(JSON.stringify({ location, days }, null, 2));
@@ -83,16 +121,23 @@ export const weekly = async (
   // may return fewer days than were asked for, and a heading that lies about
   // the rows below it is worse than one that looks odd.
   console.log(`${bold(location.label)} ${dim(`— ${days.length}日間予報`)}`);
-  console.log(renderForecast(days));
+  console.log(renderForecast(days, units));
 };
 
 /** Two weeks, kept under the Forecast API's ceiling of 16 forecast days. */
 export const fortnight = async (
   args: string[],
   options: { json?: boolean },
+  config: Config = {},
 ): Promise<void> => {
+  const units = config.units ?? "metric";
   const location = await resolveLocation(args);
-  const days = await fetchDaily(location.latitude, location.longitude, 14);
+  const days = await fetchDaily(
+    location.latitude,
+    location.longitude,
+    config.days ?? 14,
+    units,
+  );
 
   if (options.json === true) {
     console.log(JSON.stringify({ location, days }, null, 2));
@@ -100,5 +145,5 @@ export const fortnight = async (
   }
 
   console.log(`${bold(location.label)} ${dim(`— ${days.length}日間予報`)}`);
-  console.log(renderForecast(days));
+  console.log(renderForecast(days, units));
 };

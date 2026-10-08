@@ -1,4 +1,6 @@
+import type { Units } from "./config.ts";
 import { fetchJson } from "./http.ts";
+import { apiLink } from "./style.ts";
 const FORECAST_ENDPOINT = "https://api.open-meteo.com/v1/forecast";
 
 /** The Forecast API rejects `forecast_days` above 16. */
@@ -54,6 +56,11 @@ export class ForecastError extends Error {
 }
 
 const fetchForecast = async (url: URL): Promise<ForecastResponse> => {
+  // The exact URL the request goes out as: every variable, unit and day is in
+  // it, so clicking it in a terminal shows the same data on Open-Meteo's page.
+  // stderr keeps `--json` and piped stdout clean.
+  console.error(apiLink(url));
+
   const data = await fetchJson<ForecastResponse>(url);
   if (data.reason !== undefined) {
     throw new ForecastError(`Weather API エラー: ${data.reason}`);
@@ -62,21 +69,33 @@ const fetchForecast = async (url: URL): Promise<ForecastResponse> => {
   return data;
 };
 
-const buildUrl = (latitude: number, longitude: number): URL => {
+const buildUrl = (
+  latitude: number,
+  longitude: number,
+  units: Units = "metric",
+): URL => {
   const url = new URL(FORECAST_ENDPOINT);
   url.searchParams.set("latitude", String(latitude));
   url.searchParams.set("longitude", String(longitude));
   // `timezone` is mandatory as soon as daily variables are requested, and
   // `auto` resolves the zone from the coordinates instead of assuming JST.
   url.searchParams.set("timezone", "auto");
+  // The API converts rather than the client rounding: a `°F` label on a
+  // metric value would be a lie, and one conversion point is easier to trust.
+  if (units === "imperial") {
+    url.searchParams.set("temperature_unit", "fahrenheit");
+    url.searchParams.set("wind_speed_unit", "mph");
+    url.searchParams.set("precipitation_unit", "inch");
+  }
   return url;
 };
 
 export const fetchCurrent = async (
   latitude: number,
   longitude: number,
+  units: Units = "metric",
 ): Promise<CurrentWeather> => {
-  const url = buildUrl(latitude, longitude);
+  const url = buildUrl(latitude, longitude, units);
   url.searchParams.set(
     "current",
     [
@@ -112,8 +131,9 @@ export const fetchDaily = async (
   latitude: number,
   longitude: number,
   days: number,
+  units: Units = "metric",
 ): Promise<DailyWeather[]> => {
-  const url = buildUrl(latitude, longitude);
+  const url = buildUrl(latitude, longitude, units);
   url.searchParams.set(
     "daily",
     [

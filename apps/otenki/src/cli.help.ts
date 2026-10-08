@@ -1,4 +1,5 @@
 import type { Command, Option } from "./cli.parse.ts";
+import { bold } from "./style.ts";
 
 /** Help text rendering: pure string building, no I/O and no parsing. */
 
@@ -18,6 +19,14 @@ const helpOption: Option = {
   description: "show this help",
 };
 
+const noConfigOption: Option = {
+  flag: "no-config",
+  description: "ignore the config file",
+};
+
+/** Where the config file lives, for the line under the root help. */
+const CONFIG_PATH = "$XDG_CONFIG_HOME/otenki/config.json";
+
 const optionLabel = (option: Option): string =>
   option.alias === undefined
     ? `--${option.flag}`
@@ -31,7 +40,7 @@ const section = (title: string, rows: Array<[string, string]>): string[] => {
 
   return [
     "",
-    `${title}:`,
+    bold(`${title}:`),
     ...rows.map(([left, right]) => `  ${left.padEnd(width)}  ${right}`),
   ];
 };
@@ -50,7 +59,7 @@ export const commandHelp = (command: Command): string => {
         ]);
 
   return [
-    `Usage: ${usage} [options]`,
+    bold(`Usage: ${usage} [options]`),
     "",
     `  ${command.description}`,
     ...arguments_,
@@ -58,17 +67,18 @@ export const commandHelp = (command: Command): string => {
       "Options",
       // The global options are listed per command because the parser accepts
       // them there as well: `otenki today 横浜 --version` has to work.
-      [...command.options, versionOption, helpOption].map((option) => [
-        optionLabel(option),
-        option.description,
-      ]),
+      // `--no-config` is stripped before the parser, so it too is accepted
+      // anywhere in the arguments.
+      [...command.options, versionOption, helpOption, noConfigOption].map(
+        (option) => [optionLabel(option), option.description],
+      ),
     ),
   ].join("\n");
 };
 
 export const help = (commands: readonly Command[]): string =>
   [
-    `Usage: ${PROGRAM} <command> [options]`,
+    bold(`Usage: ${PROGRAM} <command> [options]`),
     "",
     `  ${SUMMARY}`,
     ...section(
@@ -77,11 +87,12 @@ export const help = (commands: readonly Command[]): string =>
     ),
     ...section(
       "Options",
-      [versionOption, helpOption].map((option) => [
+      [versionOption, helpOption, noConfigOption].map((option) => [
         optionLabel(option),
         option.description,
       ]),
     ),
     "",
+    `Set a default location, command and units in \`${CONFIG_PATH}\`.`,
     `Run \`${PROGRAM} <command> --help\` for the options of a single command.`,
   ].join("\n");

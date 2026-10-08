@@ -59,7 +59,7 @@ bunx otenki-cli today 函館 --json | jq -r '.temperature'
 明日の最高気温と降水確率を並べる。
 
 ```sh
-bunx otenki-cli tomorrow 横浜 --json | jq '"\(.temperatureMax)°C / \(.precipitationProbabilityMax)%"'
+bunx otenki-cli tomorrow 横浜 --json | jq '"\(.temperatureMax)℃ / \(.precipitationProbabilityMax)%"'
 ```
 
 7 日間で一番降る日を探す。
