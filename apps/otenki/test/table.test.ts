@@ -1,45 +1,14 @@
 import { describe, expect, test } from "bun:test";
-import { styled } from "../src/style.ts";
-import { renderTable } from "../src/table.ts";
+import { wet } from "../src/style.ts";
+import { type Column, renderTable } from "../src/table.ts";
 import { displayWidth } from "../src/width.ts";
-
-/**
- * `style.ts` reads `NO_COLOR` and `process.stdout.isTTY` on every call, so these
- * tests pin both rather than inherit them. `bun test` runs with a terminal on it
- * in some sandboxes and without in others, which is enough to turn the layout
- * assertions below into escape-sequence soup.
- */
-const withColor = <T>(color: boolean, run: () => T): T => {
-  const stdout = process.stdout as { isTTY?: boolean };
-  const wasTty = Object.getOwnPropertyDescriptor(stdout, "isTTY");
-  const hadNoColor = process.env.NO_COLOR;
-
-  Object.defineProperty(stdout, "isTTY", { value: color, configurable: true });
-  if (color) delete process.env.NO_COLOR;
-  else process.env.NO_COLOR = "1";
-
-  try {
-    const result = run();
-    // Guards the helper itself: without this, a `styled()` that never sees the
-    // override would let the assertions below pass for the wrong reason.
-    expect(styled()).toBe(color);
-    return result;
-  } finally {
-    if (wasTty === undefined) delete stdout.isTTY;
-    else Object.defineProperty(stdout, "isTTY", wasTty);
-
-    if (hadNoColor === undefined) delete process.env.NO_COLOR;
-    else process.env.NO_COLOR = hadNoColor;
-  }
-};
-
-const plain = <T>(run: () => T): T => withColor(false, run);
+import { plain, withColor } from "./support.ts";
 
 describe("displayWidth", () => {
   test("counts latin characters as one cell each", () => {
     expect(displayWidth("")).toBe(0);
     expect(displayWidth("17.5")).toBe(4);
-    expect(displayWidth("17.5°C ~ 21.1°C")).toBe(15);
+    expect(displayWidth("17.5℃ ~ 21.1℃")).toBe(15);
   });
 
   test("counts Japanese as two cells each", () => {
@@ -62,7 +31,7 @@ describe("displayWidth", () => {
   });
 
   test("ignores colour so a styled cell measures like a plain one", () => {
-    expect(displayWidth("\u001B[33m13.8°C\u001B[0m")).toBe(6);
+    expect(displayWidth("\u001B[33m13.8℃\u001B[0m")).toBe(6);
     expect(displayWidth("\u001B[90m-\u001B[0m")).toBe(1);
   });
 });
@@ -74,8 +43,8 @@ describe("renderTable", () => {
   ];
 
   const rows = [
-    ["10-05 (月)", "17.5°C ~ 21.1°C"],
-    ["10-06 (火)", "20.2°C ~ 26.7°C"],
+    ["10-05 (月)", "17.5℃ ~ 21.1℃"],
+    ["10-06 (火)", "20.2℃ ~ 26.7℃"],
   ];
 
   test("lines every row up to the same width", () => {
@@ -95,27 +64,30 @@ describe("renderTable", () => {
     expect(header).toBe("date                   temp");
     expect(rule).toBe("─".repeat(displayWidth(header ?? "")));
     expect(rest).toEqual([
-      "10-05 (月)  17.5°C ~ 21.1°C",
-      "10-06 (火)  20.2°C ~ 26.7°C",
+      "10-05 (月)  17.5℃ ~ 21.1℃",
+      "10-06 (火)  20.2℃ ~ 26.7℃",
     ]);
   });
 
   test("right aligns numbers and left aligns words", () => {
     const wide = plain(() =>
       renderTable(columns, [
-        ["10-05 (月)", "9.9°C"],
-        ["10-06 (火)", "17.5°C ~ 21.1°C"],
+        ["10-05 (月)", "9.9℃"],
+        ["10-06 (火)", "17.5℃ ~ 21.1℃"],
       ]).split("\n"),
     );
 
     // Both temperature cells end on the same column, so the short one is padded
-    // on the left rather than the right.
+    // on the left rather than the right. Measured in cells: ℃ is one code point
+    // but two columns, so a character index would miss the alignment by one.
     const short = wide[2] ?? "";
     const long = wide[3] ?? "";
+    const within = (line: string, cell: string): number =>
+      displayWidth(line.slice(0, line.indexOf(cell) + cell.length));
 
-    expect(short.endsWith("9.9°C")).toBe(true);
-    expect(long.endsWith("17.5°C ~ 21.1°C")).toBe(true);
-    expect(short.indexOf("9.9°C") + 5).toBe(long.indexOf("17.5°C") + 15);
+    expect(short.endsWith("9.9℃")).toBe(true);
+    expect(long.endsWith("17.5℃ ~ 21.1℃")).toBe(true);
+    expect(within(short, "9.9℃")).toBe(within(long, "17.5℃ ~ 21.1℃"));
   });
 
   test("never leaves trailing whitespace", () => {
@@ -155,5 +127,42 @@ describe("renderTable", () => {
     );
 
     expect(lines[0]).toBe("date                   temp");
+  });
+
+  test("lays Japanese headers and emoji cells out on one grid", () => {
+    const japanese: Column[] = [
+      { header: "日付" },
+      { header: "天気" },
+      { header: "最低", align: "right" },
+    ];
+    const lines = plain(() =>
+      renderTable(japanese, [
+        ["10-07 (水)", "☀️ 快晴", "13.3℃"],
+        ["10-10 (土)", "🌤️ 晴れ時々くもり", "11.3℃"],
+      ]).split("\n"),
+    );
+
+    const width = displayWidth(lines[0] ?? "");
+    for (const line of lines) expect(displayWidth(line)).toBe(width);
+  });
+
+  test("pads a coloured cell against its visible width", () => {
+    // The escape sequences are longer than the cell itself, so a renderer that
+    // padded by string length would leave this row short of the rule. Both
+    // columns are right aligned because a trailing pad is trimmed away: only a
+    // leading one can show a cell that measured short.
+    const wetColumns: Column[] = [
+      { header: "降水", align: "right" },
+      { header: "備考", align: "right" },
+    ];
+    const lines = withColor(true, () =>
+      renderTable(wetColumns, [
+        ["123.4 mm", "0.0"],
+        [wet("9.0 mm"), "1.0"],
+      ]).split("\n"),
+    );
+
+    const width = displayWidth(lines[0] ?? "");
+    for (const line of lines) expect(displayWidth(line)).toBe(width);
   });
 });

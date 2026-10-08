@@ -25,6 +25,22 @@ const cacheFile = (): string => `${stateDir()}/places.json`;
 
 const TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
+/**
+ * Bumped whenever ranking or matching changes. An entry stored by an older
+ * build can hold the very answer that build got wrong — Lagos for
+ * "Los Angeles" — and the TTL alone would keep serving it for up to 30 days.
+ * The version lives in the key, so an old file is read as a miss without
+ * having to inspect every entry, and the next write drops what it did not
+ * re-populate.
+ */
+const CACHE_VERSION = 2;
+
+const versionPrefix = `${CACHE_VERSION}:`;
+
+/** Exported for tests: keys are versioned, and the version is the invalidation. */
+export const cacheKey = (query: string): string =>
+  `${versionPrefix}${query.trim()}`;
+
 type Entry = {
   /** Places do not move, but the geocoder's result set can change. */
   savedAt: number;
@@ -59,7 +75,8 @@ const isEntry = (value: unknown): value is Entry => {
   });
 };
 
-const readCache = async (): Promise<Record<string, Entry>> => {
+/** Exported for tests: the file is hostile input, and the keys are part of it. */
+export const readCache = async (): Promise<Record<string, Entry>> => {
   try {
     const file = Bun.file(cacheFile());
     if (!(await file.exists())) return {};
@@ -75,6 +92,11 @@ const readCache = async (): Promise<Record<string, Entry>> => {
 
     const valid: Record<string, Entry> = {};
     for (const [key, value] of Object.entries(parsed)) {
+      // JSON.parse hands `__proto__` over as an own key, but writing it back
+      // is the prototype setter rather than a property assignment: the map
+      // would inherit whatever the file put there instead of holding an
+      // entry. Every other poisoned key degrades to a miss; this one does too.
+      if (key === "__proto__") continue;
       if (isEntry(value)) valid[key] = value;
     }
     return valid;
@@ -96,7 +118,7 @@ export const cachedGeocode = async (
   query: string,
   load: () => Promise<GeocodeResult[]>,
 ): Promise<GeocodeResult[]> => {
-  const key = query.trim();
+  const key = cacheKey(query);
   const cache = await readCache();
   const hit = cache[key];
 
@@ -110,9 +132,17 @@ export const cachedGeocode = async (
   cache[key] = { savedAt: Date.now(), results };
 
   // Drop stale entries on write so the file cannot grow without bound.
+  // Entries from another version go too: they are unreachable by then, and
+  // leaving them would resurrect a stale answer the moment the version rolls
+  // back and forth.
   const kept: Record<string, Entry> = {};
   for (const [cachedKey, entry] of Object.entries(cache)) {
-    if (Date.now() - entry.savedAt < TTL_MS) kept[cachedKey] = entry;
+    if (
+      cachedKey.startsWith(versionPrefix) &&
+      Date.now() - entry.savedAt < TTL_MS
+    ) {
+      kept[cachedKey] = entry;
+    }
   }
 
   await writeCache(kept);

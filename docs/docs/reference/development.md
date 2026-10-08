@@ -106,28 +106,33 @@ apps/otenki/test/geocode.test.ts   サフィックス展開と順位付け
 apps/otenki/test/fzf.test.ts       fzf の候補行と選択の突き合わせ
 apps/otenki/test/location.test.ts  座標と地名の振り分け
 apps/otenki/test/table.test.ts     表示幅と表の組版
+apps/otenki/test/daily.test.ts     予報表と今日・明日の出力
+apps/otenki/test/locate.test.ts    locate の見出しと候補表
 apps/otenki/test/cache.test.ts     キャッシュの有効期限と形状検証
+apps/otenki/test/config.test.ts    設定ファイルの読込とバリデーション
 apps/otenki/test/sanitize.test.ts  制御シーケンスの除去
 apps/otenki/test/cli.test.ts       引数解析、ヘルプ、終了コード
+apps/otenki/test/support.ts        色の固定と共通のヘルパー（テスト専用）
 ```
 
 ネットワークは叩きません。対象のロジックは純関数とローカルファイルの読み書きだけです。
 
 - `candidateQueries` 地名から作る問い合わせの一覧
-- `rankCandidates` feature code → 人口 → 名前 の並び替え
+- `rankCandidates` 首都 → 集落地 → 人口 → feature code → 名前 の並び替え
 - `resolveLocation` 座標か地名かの判定
 - `fzfChoices` と `matchChoice` fzf との受け渡し
 - `displayWidth` と `renderTable` CJK・絵文字・ANSI を含む列幅の計算
 - `sanitizeText` 外来文字列からの制御シーケンス除去
 - `cachedGeocode` 不正なキャッシュエントリをミスとして扱うこと
 
-表のテストは `NO_COLOR` と `process.stdout.isTTY` を明示的に固定します。`bun test` は PTY Sandbox どちらの上でも動くので、この 2 つを素直に読むと期待値が端末によって変わります。
+表のテストは `test/support.ts` の `withColor()` が `NO_COLOR` と `process.stdout.isTTY` を明示的に固定します。`bun test` は PTY Sandbox どちらの上でも動くので、この 2 つを素直に読むと期待値が端末によって変わります。
 
 ## ソースの地図
 
 | ファイル           | 役割                                                          |
 | ------------------ | ------------------------------------------------------------- |
-| `index.ts`         | コマンド定義と終了コード                                      |
+| `index.ts`         | コマンド定義、設定ファイルの読込と終了コード                  |
+| `config.ts`        | `$XDG_CONFIG_HOME` の設定ファイル、検証、`--no-config`        |
 | `cli.parse.ts`     | コマンド定義、`UsageError`、引数解析                          |
 | `cli.help.ts`      | ヘルプと usage の組み立て                                     |
 | `cli.dispatch.ts`  | コマンドの選択、実行、エラー報告                              |
@@ -143,9 +148,9 @@ apps/otenki/test/cli.test.ts       引数解析、ヘルプ、終了コード
 | `locate.ts`        | `locate` の出力                                               |
 | `fzf.ts`           | fzf の候補行、選択の突き合わせ、プロセス起動                  |
 | `format.ts`        | 温度、風、湿度、日付の表示形式                                |
-| `style.ts`         | ANSI 色。TTY と `NO_COLOR` を見る                             |
+| `style.ts`         | ANSI 色。TTY と `NO_COLOR` と config の `color` を見る        |
 | `weather.icon.ts`  | 天気コードから絵文字                                          |
-| `weather.label.ts` | 天気コードから日本語表示名                                    |
+| `weather.label.ts` | 天気コードから日本語表示名と色の強さ（雷・大雨）              |
 | `http.ts`          | タイムアウトと再試行を持つ fetch                              |
 | `version.ts`       | `OTENKI_VERSION` と `package.json` から版を読む               |
 

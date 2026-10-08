@@ -10,8 +10,9 @@ $ bunx otenki-cli locate 函館
 PPLA2 · 北海道 · 日本 · 標高5m
 
 $ bunx otenki-cli today 函館
-☀️ 13.8°C  函館市 北海道
-2026-10-04 22:45 · 快晴 · 体感 12.1°C · 風 9.1 km/h · 湿度 72% · 降水 0.0 mm
+函館市 北海道
+☀️ 快晴  13.8℃  体感 12.1℃
+風 9.1 km/h · 湿度 72% · 降水 0.0 mm · 2026-10-04 22:45
 ```
 
 Full documentation: <https://nazozokc.github.io/otenki/> — sources in
@@ -57,10 +58,11 @@ built by tsdown, so a run loads a single module instead of the TypeScript source
 | `weekly`    | 7 day forecast                                 |
 | `fortnight` | 14 day forecast (see the note below)           |
 | `locate`    | resolve a place name to latitude and longitude |
-| `cache`     | inspect or drop the place name cache           |
+| `cache`     | manage the place name cache                    |
 
 Every weather command accepts a location either as a place name or as a
-coordinate pair, and every command takes `--json` for scripting.
+coordinate pair, and each of them — `locate` included — takes `--json` for
+scripting (`cache` is the one exception).
 
 ```sh
 bunx otenki-cli today 横浜            # by name
@@ -90,6 +92,38 @@ $ bunx otenki-cli locate --json 横浜
 Output is coloured on a TTY and respects `NO_COLOR`, so piping into another tool
 gives plain text.
 
+Every command finishes with a data source credit on stderr:
+
+```text
+Get Locate: https://www.geonames.org/
+Get Weather: https://open-meteo.com/
+```
+
+Piped stdout and `--json` stay untouched.
+
+## Configuration
+
+Every setting is optional. Put defaults in
+`$XDG_CONFIG_HOME/otenki/config.json` (falling back to
+`~/.config/otenki/config.json`):
+
+```json
+{
+  "location": "函館",
+  "command": "today",
+  "color": "auto",
+  "units": "metric",
+  "days": 7
+}
+```
+
+With that file, a bare `otenki` runs `today` for 函館. An argument on the
+command line always beats the config, and `--no-config` skips the file
+entirely. `units: "imperial"` switches the API query and the printed units to
+°F / mph / in; `days` sets the length of `weekly` and `fortnight` (1-16).
+
+Full reference: <https://nazozokc.github.io/otenki/reference/config>
+
 ## How a lookup works
 
 ```
@@ -99,7 +133,7 @@ bunx otenki-cli today 函館
   │                   → 41.77583, 140.73666
   │
   └─ Weather API ──── current weather for those coordinates
-                   → ☀️ 13.8°C
+                   → ☀️ 快晴 13.8℃
 ```
 
 The geocoder is the awkward half. It indexes one name per GeoNames record and
@@ -115,9 +149,10 @@ suffix happens to be spelled in the index:
 | `東京都` | ok         | —                                           |
 
 `locate` walks the suffixes in both directions (`県 都 府 市 町 村`, appended and
-stripped), issues the variants concurrently, and ranks the pooled results by
-GeoNames feature code and then population. That is what turns `横浜` into
-`横浜市 神奈川県` and `高崎` into `高崎市 群馬県`.
+stripped), issues the variants concurrently, and ranks the pooled results with
+country capitals first, other populated places next, and population deciding
+within those — parks, stations and islands never rise above a city. That is what
+turns `横浜` into `横浜市 神奈川県` and `高崎` into `高崎市 群馬県`.
 
 Resolved names are cached for 30 days under `$XDG_STATE_HOME/otenki/places.json`,
 which takes a repeat lookup from about 1.5 s to about 0.08 s.
@@ -135,8 +170,8 @@ which takes a repeat lookup from about 1.5 s to about 0.08 s.
   coordinates instead: `bunx otenki-cli today 32.98880 132.55970`.
 - **Ambiguous names need `--pick`.** `横浜` also exists in Aomori, Fukuoka and
   Kumamoto. Ranking picks the most populous match, which is usually right; use
-  `--all` to see the rest or `--pick` to choose. `fzf` is optional — without it
-  `--pick` falls back to the best match.
+  `--all` to see the rest or `--pick` to choose. `--pick` requires `fzf` —
+  without it the command reports the missing dependency instead of guessing.
 
 ## Development
 

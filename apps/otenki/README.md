@@ -5,14 +5,16 @@ anything else on earth — and it resolves the coordinates and prints the foreca
 
 ```console
 $ otenki today 函館
-☀️ 13.8°C  函館市 北海道
-2026-10-04 22:45 · 快晴 · 体感 12.1°C · 風 9.1 km/h · 湿度 72% · 降水 0.0 mm
+函館市 北海道
+☀️ 快晴  13.8℃  体感 12.1℃
+風 9.1 km/h · 湿度 72% · 降水 0.0 mm · 2026-10-04 22:45
 
 $ otenki weekly 横浜
 横浜市 神奈川県 — 7日間予報
-date        icon  weather                    temp  precip  prob       wind
-──────────────────────────────────────────────────────────────────────────
-10-05 (火)  🌦️    晴れ時々くもり  22.4°C ~ 16.1°C  0.4 mm   30%  12.3 km/h
+日付        天気                 最低    最高    降水  確率       風速
+──────────────────────────────────────────────────────────────────────
+10-07 (水)  ☁️ 曇り            17.9℃  23.5℃  0.0 mm   69%  13.6 km/h
+10-08 (木)  🌤️ 晴れ            16.1℃  23.1℃  0.0 mm    0%   9.6 km/h
 ```
 
 ## Install
@@ -46,11 +48,25 @@ nix profile install .
 | `weekly`    | 7 day forecast                                 |
 | `fortnight` | 14 day forecast (two weeks)                    |
 | `locate`    | resolve a place name to latitude and longitude |
-| `cache`     | inspect or drop the place name cache           |
+| `cache`     | manage the place name cache                    |
 
 Every weather command accepts a location as a place name or a coordinate pair,
-and every command takes `--json` for scripting. Output is coloured on a TTY and
-respects `NO_COLOR`.
+and each of them — `locate` included — takes `--json` for scripting (`cache`
+is the one exception). Output is coloured on a TTY and respects `NO_COLOR`.
+
+Every command also credits its data sources on stderr
+(`Get Locate: https://www.geonames.org/` and
+`Get Weather: https://open-meteo.com/`), so piped stdout stays clean.
+
+Defaults live in `$XDG_CONFIG_HOME/otenki/config.json` (falling back to
+`~/.config/otenki/config.json`): a default location, the command a bare
+`otenki` runs, colour, units (`°F` / `mph` / `in`) and the forecast length for
+`weekly` and `fortnight`. Command-line arguments beat the config, and
+`--no-config` skips the file:
+
+```json
+{ "location": "函館", "command": "today" }
+```
 
 Built on the free, key-less [Open-Meteo](https://open-meteo.com/) APIs, with place
 names from [GeoNames](https://www.geonames.org/).

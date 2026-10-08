@@ -1,4 +1,6 @@
+import type { Units } from "./config.ts";
 import { fetchJson } from "./http.ts";
+import { sanitizeText } from "./sanitize.ts";
 const FORECAST_ENDPOINT = "https://api.open-meteo.com/v1/forecast";
 
 /** The Forecast API rejects `forecast_days` above 16. */
@@ -62,21 +64,33 @@ const fetchForecast = async (url: URL): Promise<ForecastResponse> => {
   return data;
 };
 
-const buildUrl = (latitude: number, longitude: number): URL => {
+const buildUrl = (
+  latitude: number,
+  longitude: number,
+  units: Units = "metric",
+): URL => {
   const url = new URL(FORECAST_ENDPOINT);
   url.searchParams.set("latitude", String(latitude));
   url.searchParams.set("longitude", String(longitude));
   // `timezone` is mandatory as soon as daily variables are requested, and
   // `auto` resolves the zone from the coordinates instead of assuming JST.
   url.searchParams.set("timezone", "auto");
+  // The API converts rather than the client rounding: a `°F` label on a
+  // metric value would be a lie, and one conversion point is easier to trust.
+  if (units === "imperial") {
+    url.searchParams.set("temperature_unit", "fahrenheit");
+    url.searchParams.set("wind_speed_unit", "mph");
+    url.searchParams.set("precipitation_unit", "inch");
+  }
   return url;
 };
 
 export const fetchCurrent = async (
   latitude: number,
   longitude: number,
+  units: Units = "metric",
 ): Promise<CurrentWeather> => {
-  const url = buildUrl(latitude, longitude);
+  const url = buildUrl(latitude, longitude, units);
   url.searchParams.set(
     "current",
     [
@@ -94,8 +108,13 @@ export const fetchCurrent = async (
     throw new ForecastError("Weather API が current データを返しませんでした");
   }
 
+  // `time` is printed as output by every command that fetches it, and it
+  // comes from the network: a compromised API could carry an OSC sequence or
+  // a newline into the date column. Control characters never belong in an ISO
+  // date, so both fetchCurrent and fetchDaily strip them at the source, the
+  // way geocode.ts sanitizes the place fields.
   return {
-    time: current.time,
+    time: sanitizeText(current.time),
     temperature: current.temperature_2m ?? Number.NaN,
     apparentTemperature: current.apparent_temperature ?? null,
     weatherCode: current.weather_code ?? -1,
@@ -112,8 +131,9 @@ export const fetchDaily = async (
   latitude: number,
   longitude: number,
   days: number,
+  units: Units = "metric",
 ): Promise<DailyWeather[]> => {
-  const url = buildUrl(latitude, longitude);
+  const url = buildUrl(latitude, longitude, units);
   url.searchParams.set(
     "daily",
     [
@@ -136,7 +156,7 @@ export const fetchDaily = async (
     values?.[index] ?? null;
 
   return daily.time.map((time, index) => ({
-    time,
+    time: sanitizeText(time),
     weatherCode: at(daily.weather_code, index) ?? -1,
     temperatureMax: at(daily.temperature_2m_max, index),
     temperatureMin: at(daily.temperature_2m_min, index),

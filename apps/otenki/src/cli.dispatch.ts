@@ -1,21 +1,28 @@
 import { commandHelp, help } from "./cli.help.ts";
 import { type Command, isFlag, parseArgs, UsageError } from "./cli.parse.ts";
+import type { Config } from "./config.ts";
 import { sanitizeText } from "./sanitize.ts";
-import { error as styleError } from "./style.ts";
+import { credits, error as styleError } from "./style.ts";
 
 /**
  * Runs one command out of `argv` and returns the exit code. Errors go to stderr
  * the way a CLI should report them: one line, plus the usage when the invocation
  * was at fault. Nothing here calls `process.exit`, so the parser stays testable.
+ *
+ * `config` supplies the two defaults the config file is allowed to set at the
+ * argument level: a command for a bare invocation, and a location for an
+ * omitted one. Both are what the CLI would have gotten anyway, so an explicit
+ * argument always wins without the two sides having to negotiate.
  */
 export const dispatch = async (
   commands: readonly Command[],
   argv: readonly string[],
   version: string,
+  config: Config = {},
 ): Promise<number> => {
   const first = argv[0];
 
-  if (first === undefined) {
+  if (first === undefined && config.command === undefined) {
     console.error(help(commands));
     return 1;
   }
@@ -32,6 +39,8 @@ export const dispatch = async (
     return 1;
   };
 
+  // `-h` and friends win over the configured command: a reader who asks for
+  // help is not asking for the weather, configured or not.
   if (first === "-h" || first === "--help" || first === "help") {
     // `help <command>` and `--help <command>` name the command in the next
     // token; without one, both print the root help.
@@ -49,20 +58,52 @@ export const dispatch = async (
     return 0;
   }
 
+  let tokens = argv;
+
+  // The configured command stands in for a missing command name: a bare
+  // invocation, or one that starts with an option meant for that command
+  // (`otenki --json` is `otenki weekly --json` when weekly is configured).
+  // An explicit command name skips this, which is the precedence rule.
+  if (config.command !== undefined && (first === undefined || isFlag(first))) {
+    const configured = commands.find(
+      (candidate) => candidate.name === config.command,
+    );
+
+    if (configured === undefined) {
+      // The config file is user input, and a typo there should say so rather
+      // than fall through as an unknown command with no path to the cause.
+      const message = styleError(
+        `✗ config: unknown command '${sanitizeText(config.command)}'`,
+      );
+      console.error(`${message}\n\n${help(commands)}`);
+      return 1;
+    }
+
+    tokens = [configured.name, ...argv];
+  }
+
+  const head = tokens[0];
+
+  if (head === undefined) {
+    // Unreachable: the branches above either return or prepend a token.
+    console.error(help(commands));
+    return 1;
+  }
+
   // The token is shaped like an option, so calling it an unknown command would
   // send the reader looking in the wrong list. The mistake is its position.
-  if (isFlag(first)) {
+  if (isFlag(head)) {
     const message = styleError(
-      `✗ option '${sanitizeText(first)}' must come after the command`,
+      `✗ option '${sanitizeText(head)}' must come after the command`,
     );
     console.error(`${message}\n\n${help(commands)}`);
     return 1;
   }
 
-  const command = commands.find((candidate) => candidate.name === first);
+  const command = commands.find((candidate) => candidate.name === head);
 
   if (command === undefined) {
-    return failUnknown(first);
+    return failUnknown(head);
   }
 
   const allowed = [
@@ -80,7 +121,8 @@ export const dispatch = async (
   const usage = commandHelp(command);
 
   try {
-    const { flags, args } = parseArgs(argv.slice(1), allowed);
+    const { flags, args: parsedArgs } = parseArgs(tokens.slice(1), allowed);
+    let args = parsedArgs;
 
     if (flags.help === true || flags.h === true) {
       console.log(usage);
@@ -92,13 +134,28 @@ export const dispatch = async (
       return 0;
     }
 
+    // The configured location only fills the gap: one argument on the command
+    // line means the reader said which place, so the default stays home.
     if (command.argument !== undefined && args.length === 0) {
-      throw new UsageError(
-        `missing required argument '${command.argument.name}'`,
-      );
+      const location = config.location;
+
+      if (location === undefined) {
+        throw new UsageError(
+          `missing required argument '${command.argument.name}'`,
+        );
+      }
+
+      args =
+        typeof location === "string"
+          ? [location]
+          : [String(location[0]), String(location[1])];
     }
 
-    await command.run(args, flags);
+    await command.run(args, flags, config);
+    // The credit goes on after the output rather than before it, and on stderr
+    // so `--json` and piped stdout stay the command's own. A command that
+    // failed has printed nothing worth following with a credit.
+    console.error(credits());
     return 0;
   } catch (failure: unknown) {
     // The message may echo argv or an API field, so it gets the same pass as

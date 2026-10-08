@@ -139,6 +139,30 @@ describe("matchesTokens", () => {
   test("keeps everything when there is nothing to filter by", () => {
     expect(matchesTokens(place({ name: "x" }), [])).toBe(true);
   });
+
+  test("does not reach a place through its country code", () => {
+    // The code behind `today Los Angeles` answering Lagos: "Angeles" contains
+    // Lagos' `NG`, and the reverse direction asked the token to contain the
+    // field rather than the other way round.
+    const lagos = place({
+      name: "ラゴス",
+      country: "尼日利亚",
+      country_code: "NG",
+    });
+
+    expect(matchesTokens(lagos, ["Angeles"])).toBe(false);
+  });
+
+  test("still narrows by an ISO country code", () => {
+    const paris = place({
+      name: "Paris",
+      country: "France",
+      country_code: "FR",
+    });
+
+    expect(matchesTokens(paris, ["fr"])).toBe(true);
+    expect(matchesTokens(paris, ["France"])).toBe(true);
+  });
 });
 
 describe("rankCandidates", () => {
@@ -221,6 +245,41 @@ describe("rankCandidates", () => {
     ]);
 
     expect(ranked[0]?.name).toBe("高崎市");
+  });
+
+  test("keeps population ahead of the feature code", () => {
+    // York, Nebraska is an admin seat and New York a plain PPL: the code used
+    // to decide first, which handed `New York` a town of 7,864.
+    const ranked = rankCandidates([
+      place({ id: 1, name: "York", feature_code: "PPLA2", population: 7864 }),
+      place({
+        id: 2,
+        name: "New York",
+        feature_code: "PPL",
+        population: 8804190,
+      }),
+    ]);
+
+    expect(ranked[0]?.name).toBe("New York");
+  });
+
+  test("keeps a park below a populated place whatever the figures", () => {
+    const ranked = rankCandidates([
+      place({
+        id: 1,
+        name: "函館市市民の森",
+        feature_code: "PRK",
+        population: 999999,
+      }),
+      place({
+        id: 2,
+        name: "函館市",
+        feature_code: "PPLA2",
+        population: 275730,
+      }),
+    ]);
+
+    expect(ranked[0]?.name).toBe("函館市");
   });
 
   test("does not mutate its input", () => {

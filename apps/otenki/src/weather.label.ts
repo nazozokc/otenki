@@ -33,3 +33,19 @@ const LABELS: Record<number, string> = {
 
 export const weatherLabel = (weatherCode: number): string =>
   LABELS[weatherCode] ?? "不明";
+
+const THUNDER_CODES = [95, 96, 97, 99];
+const HEAVY_CODES = [65, 66, 67, 75, 82, 86];
+
+export type Severity = "thunder" | "heavy";
+
+/**
+ * Which codes deserve a raised voice: thunderstorms read magenta, heavy rain
+ * and heavy snow read bold red, everything else stays plain. The codes live
+ * next to the labels so a renderer never has to look them up twice.
+ */
+export const weatherSeverity = (weatherCode: number): Severity | null => {
+  if (THUNDER_CODES.includes(weatherCode)) return "thunder";
+  if (HEAVY_CODES.includes(weatherCode)) return "heavy";
+  return null;
+};

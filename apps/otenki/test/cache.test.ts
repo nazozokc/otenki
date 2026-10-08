@@ -10,7 +10,12 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { cachedGeocode, clearCache } from "../src/cache.ts";
+import {
+  cacheKey,
+  cachedGeocode,
+  clearCache,
+  readCache,
+} from "../src/cache.ts";
 
 const stateHome = mkdtempSync(join(tmpdir(), "otenki-cache-"));
 const stateDir = join(stateHome, "otenki");
@@ -40,7 +45,7 @@ const place = {
 };
 
 const entry = (results: unknown, savedAt = Date.now()): string =>
-  JSON.stringify({ 函館: { savedAt, results } });
+  JSON.stringify({ [cacheKey("函館")]: { savedAt, results } });
 
 const fresh = async (): Promise<string[]> => {
   const seen: string[] = [];
@@ -90,7 +95,7 @@ describe("cachedGeocode", () => {
   });
 
   test("treats a non-object entry and corrupt JSON as empty", async () => {
-    writeFileSync(cacheFile, JSON.stringify({ 函館: "oops" }));
+    writeFileSync(cacheFile, JSON.stringify({ [cacheKey("函館")]: "oops" }));
     expect(await fresh()).toEqual(["loaded"]);
 
     writeFileSync(cacheFile, "{not json");
@@ -100,12 +105,23 @@ describe("cachedGeocode", () => {
     expect(await fresh()).toEqual(["loaded"]);
   });
 
+  test("ignores an entry left behind by an older version", async () => {
+    // The version in the key is the invalidation: a ranking fix must not be
+    // answered by the results the previous ranking produced.
+    writeFileSync(
+      cacheFile,
+      JSON.stringify({ 函館: { savedAt: Date.now(), results: [place] } }),
+    );
+
+    expect(await fresh()).toEqual(["loaded"]);
+  });
+
   test("keeps valid entries when a poisoned one is dropped", async () => {
     writeFileSync(
       cacheFile,
       JSON.stringify({
-        函館: { savedAt: Date.now(), results: [place] },
-        横浜: { savedAt: Date.now(), results: [{ name: 1 }] },
+        [cacheKey("函館")]: { savedAt: Date.now(), results: [place] },
+        [cacheKey("横浜")]: { savedAt: Date.now(), results: [{ name: 1 }] },
       }),
     );
 
@@ -116,6 +132,25 @@ describe("cachedGeocode", () => {
     });
 
     expect(called).toBe(false);
+  });
+});
+
+describe("readCache", () => {
+  test("drops a __proto__ key instead of inheriting it", async () => {
+    // Written as JSON text on purpose: an object literal with a `__proto__`
+    // key sets the prototype instead of creating a property, which is exactly
+    // the assignment this guards against — `valid[key] = value` would invoke
+    // the setter and leave the map inheriting whatever the file dictated.
+    writeFileSync(
+      cacheFile,
+      `{"__proto__": {"savedAt": 1, "results": [{"name": "poison"}]}}`,
+    );
+
+    const cache = await readCache();
+
+    expect(Object.hasOwn(cache, "__proto__")).toBe(false);
+    expect((cache as Record<string, unknown>).savedAt).toBeUndefined();
+    expect((cache as Record<string, unknown>).results).toBeUndefined();
   });
 });
 

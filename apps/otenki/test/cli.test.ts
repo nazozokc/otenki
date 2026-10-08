@@ -7,8 +7,14 @@ import {
   type Command,
   type Flags,
 } from "../src/cli.parse.ts";
+import type { Config } from "../src/config.ts";
+import { withColorAsync } from "./support.ts";
 
 const noop = async (): Promise<void> => {};
+
+/** The credit dispatch prints on stderr once a command has run. */
+const CREDITS =
+  "Get Locate: https://www.geonames.org/\nGet Weather: https://open-meteo.com/";
 
 const commands: Command[] = [
   {
@@ -25,6 +31,35 @@ const commands: Command[] = [
     run: noop,
   },
 ];
+
+const capture = () => {
+  const out: string[] = [];
+  const err: string[] = [];
+  spyOn(console, "log").mockImplementation((...args: unknown[]) => {
+    out.push(args.join(" "));
+  });
+  spyOn(console, "error").mockImplementation((...args: unknown[]) => {
+    err.push(args.join(" "));
+  });
+
+  return { out, err };
+};
+
+/** A command that remembers how dispatch called it, instead of running. */
+const recording = () => {
+  const calls: Array<{ args: string[]; flags: Flags; config: Config }> = [];
+  const command: Command = {
+    name: "today",
+    description: "current weather",
+    argument: { name: "location", description: "place name" },
+    options: [{ flag: "json", description: "print raw JSON" }],
+    run: async (args, flags, config) => {
+      calls.push({ args, flags, config });
+    },
+  };
+
+  return { calls, command };
+};
 
 describe("parseArgs", () => {
   test("splits flags from positional arguments", () => {
@@ -103,6 +138,13 @@ describe("help", () => {
 
     expect(text).toContain("-V, --version");
     expect(text).toContain("-h, --help");
+    expect(text).toContain("--no-config");
+  });
+
+  test("points at the config file", () => {
+    const text = help(commands);
+
+    expect(text).toContain("$XDG_CONFIG_HOME/otenki/config.json");
   });
 
   test("describes the positional argument of a command", () => {
@@ -120,6 +162,7 @@ describe("help", () => {
 
     expect(text).toContain("-V, --version");
     expect(text).toContain("-h, --help");
+    expect(text).toContain("--no-config");
   });
 
   test("omits the argument section when a command takes none", () => {
@@ -128,19 +171,6 @@ describe("help", () => {
 });
 
 describe("dispatch", () => {
-  const capture = () => {
-    const out: string[] = [];
-    const err: string[] = [];
-    spyOn(console, "log").mockImplementation((...args: unknown[]) => {
-      out.push(args.join(" "));
-    });
-    spyOn(console, "error").mockImplementation((...args: unknown[]) => {
-      err.push(args.join(" "));
-    });
-
-    return { out, err };
-  };
-
   test("prints the version and exits cleanly", async () => {
     const { out } = capture();
 
@@ -287,5 +317,125 @@ describe("dispatch", () => {
     expect(await dispatch([strict], ["cache"], "1.2.3")).toBe(1);
     expect(err[0]).toContain("--clear を指定してください");
     expect(err[0]).toContain("Usage: otenki cache");
+  });
+
+  test("prints the data source credit after every command's output", async () => {
+    const { out, err } = capture();
+
+    await withColorAsync(false, async () => {
+      expect(await dispatch(commands, ["today", "横浜"], "1.2.3")).toBe(0);
+      expect(await dispatch(commands, ["cache", "--clear"], "1.2.3")).toBe(0);
+    });
+
+    // stdout stays the command's own; the credit is one stderr block per run.
+    expect(out).toHaveLength(0);
+    expect(err).toEqual([CREDITS, CREDITS]);
+  });
+
+  test("prints no credit for help, the version, or a failed command", async () => {
+    const { err } = capture();
+
+    await withColorAsync(false, async () => {
+      expect(await dispatch(commands, ["--help"], "1.2.3")).toBe(0);
+      expect(await dispatch(commands, ["-V"], "1.2.3")).toBe(0);
+      // A command that printed no output has nothing to take credit for.
+      expect(await dispatch(commands, ["today"], "1.2.3")).toBe(1);
+    });
+
+    expect(err.some((line) => line.includes("Get Weather"))).toBe(false);
+  });
+});
+
+describe("dispatch with a config", () => {
+  test("runs the configured command when none is given", async () => {
+    const { out } = capture();
+    const { calls, command } = recording();
+    const config: Config = { command: "today", location: "函館" };
+
+    expect(await dispatch([command], [], "1.2.3", config)).toBe(0);
+    expect(calls).toEqual([{ args: ["函館"], flags: {}, config }]);
+    expect(out).toHaveLength(0);
+  });
+
+  test("injects the configured location only when the argument is omitted", async () => {
+    capture();
+    const { calls, command } = recording();
+
+    await dispatch([command], ["today"], "1.2.3", { location: "函館" });
+    // An explicit place on the command line is what the reader wants: the
+    // config default never gets a chance to override it.
+    await dispatch([command], ["today", "横浜"], "1.2.3", {
+      location: "函館",
+    });
+    expect(calls[0]?.args).toEqual(["函館"]);
+    expect(calls[1]?.args).toEqual(["横浜"]);
+  });
+
+  test("injects a configured coordinate pair as two arguments", async () => {
+    capture();
+    const { calls, command } = recording();
+
+    await dispatch([command], ["today"], "1.2.3", {
+      location: [35.69, 139.69],
+    });
+
+    expect(calls[0]?.args).toEqual(["35.69", "139.69"]);
+  });
+
+  test("starts the configured command from an option-only invocation", async () => {
+    capture();
+    const { calls, command } = recording();
+
+    // `otenki --json` with no command is `otenki today --json` here.
+    expect(
+      await dispatch([command], ["--json"], "1.2.3", {
+        command: "today",
+        location: "函館",
+      }),
+    ).toBe(0);
+    expect(calls).toEqual([
+      {
+        args: ["函館"],
+        flags: { json: true },
+        config: { command: "today", location: "函館" },
+      },
+    ]);
+  });
+
+  test("stays missing-argument when the config has no location", async () => {
+    const { err } = capture();
+
+    expect(
+      await dispatch(commands, ["today"], "1.2.3", { command: "today" }),
+    ).toBe(1);
+    expect(err[0]).toContain("missing required argument 'location'");
+  });
+
+  test("reports a configured command no command implements", async () => {
+    const { err } = capture();
+
+    expect(await dispatch(commands, [], "1.2.3", { command: "wekly" })).toBe(1);
+    expect(err[0]).toContain("config: unknown command 'wekly'");
+    expect(err[0]).toContain("Usage: otenki <command>");
+  });
+
+  test("keeps -V and -h ahead of the configured command", async () => {
+    const { out } = capture();
+    const config: Config = { command: "today", location: "函館" };
+
+    expect(await dispatch(commands, ["-V"], "1.2.3", config)).toBe(0);
+    expect(await dispatch(commands, ["--help"], "1.2.3", config)).toBe(0);
+    expect(out[0]).toBe("1.2.3");
+    expect(out[1]).toContain("Usage: otenki <command>");
+  });
+
+  test("passes the config object through to the command", async () => {
+    capture();
+    const { calls, command } = recording();
+    const config: Config = { units: "imperial", days: 5 };
+
+    await dispatch([command], ["today", "横浜"], "1.2.3", config);
+
+    expect(calls[0]?.config).toBe(config);
   });
 });

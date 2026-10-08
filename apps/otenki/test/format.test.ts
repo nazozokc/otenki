@@ -23,7 +23,7 @@ describe("formatCoordinate", () => {
 
 describe("formatTemperature", () => {
   test("renders one decimal", () => {
-    expect(formatTemperature(18.24)).toBe("18.2°C");
+    expect(formatTemperature(18.24)).toBe("18.2℃");
   });
 
   test("renders a missing value as a dash", () => {
@@ -35,7 +35,7 @@ describe("formatTemperature", () => {
 
 describe("formatTemperatureRange", () => {
   test("puts the minimum first", () => {
-    expect(formatTemperatureRange(14.24, 21.36)).toBe("14.2°C ~ 21.4°C");
+    expect(formatTemperatureRange(14.24, 21.36)).toBe("14.2℃ ~ 21.4℃");
   });
 
   test("needs both ends", () => {
