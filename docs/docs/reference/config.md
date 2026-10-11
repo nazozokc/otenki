@@ -76,7 +76,7 @@ otenki today 東京        # 明示した引数が優先
 
 ### 予報日数
 
-`days` は `weekly`（既定 7 日）と `fortnight`（既定 14 日）に効きます。`today` `tomorrow` は対象外です。上限は Forecast API の 16 日で、範囲外はエラーになります。
+`days` は `weekly`（既定 7 日）と `fortnight`（既定 14 日）に効きます。`today` `tomorrow` と時間別の `3h` `6h` `12h` `24h` は対象外です。上限は Forecast API の 16 日で、範囲外はエラーになります。
 
 ## 優先順位
 

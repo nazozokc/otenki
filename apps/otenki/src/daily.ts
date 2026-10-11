@@ -31,8 +31,8 @@ const COLUMNS: Column[] = [
   { header: "風速", align: "right" },
 ];
 
-/** The one cell whose colour carries meaning about the day itself. */
-const weatherCell = (weatherCode: number): string => {
+/** The one cell whose colour carries meaning about the day itself. Shared with the interval views. */
+export const weatherCell = (weatherCode: number): string => {
   const text = `${weatherIcon(weatherCode)} ${weatherLabel(weatherCode)}`;
 
   switch (weatherSeverity(weatherCode)) {

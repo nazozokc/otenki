@@ -1,6 +1,6 @@
 # 地名の指定
 
-`today` `tomorrow` `weekly` `fortnight` は、引数の取り方が 2 通りあります。
+`today` `tomorrow` `weekly` `fortnight` `3h` `6h` `12h` `24h` は、引数の取り方が 2 通りあります。
 
 ## 座標
 

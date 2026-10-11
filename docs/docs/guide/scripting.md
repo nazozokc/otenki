@@ -2,7 +2,7 @@
 
 ## 生 JSON
 
-`today` `tomorrow` `weekly` `fortnight` `locate` はすべて `--json` を受け付けます。色も表の罫線も出ないので、他のコマンドへそのまま渡せます。`--json` は TTY でもパイプでも同じ形なので、端末の設定に左右されません。
+`today` `tomorrow` `weekly` `fortnight` `3h` `6h` `12h` `24h` `locate` はすべて `--json` を受け付けます。色も表の罫線も出ないので、他のコマンドへそのまま渡せます。`--json` は TTY でもパイプでも同じ形なので、端末の設定に左右されません。
 
 ```console
 $ bunx otenki-cli today 函館 --json
@@ -45,6 +45,25 @@ $ bunx otenki-cli weekly 横浜 --json
 ```
 
 `tomorrow` は 1 日分なので、`days` ではなく日付のフィールドが直接並びます。
+
+`3h` `6h` `12h` `24h` は `hours` 配列です。`days` と同じく、間引いた各時刻のオブジェクトが並びます。
+
+```console
+$ bunx otenki-cli 3h 函館 --json
+{
+  "location": { "latitude": 41.77583, "longitude": 140.73666, "label": "函館市 北海道" },
+  "hours": [
+    {
+      "time": "2026-10-10T16:00",
+      "temperature": 19.8,
+      "weatherCode": 1,
+      "precipitationProbability": 0,
+      "windSpeed": 4.3,
+      "precipitation": 0
+    }
+  ]
+}
+```
 
 `locate --json` は仕様が違います。Geocoding API の返り値をそのまま出力します。キーは snake_case です。`--all` を付けると 1 件ではなく配列になりますが、`--pick` と組み合わせたときは選んだ 1 件だけが出ます。
 

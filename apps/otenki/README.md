@@ -41,14 +41,15 @@ nix profile install .
 
 ## Commands
 
-| Command     | Description                                    |
-| ----------- | ---------------------------------------------- |
-| `today`     | current conditions                             |
-| `tomorrow`  | tomorrow's forecast                            |
-| `weekly`    | 7 day forecast                                 |
-| `fortnight` | 14 day forecast (two weeks)                    |
-| `locate`    | resolve a place name to latitude and longitude |
-| `cache`     | manage the place name cache                    |
+| Command               | Description                                          |
+| --------------------- | ---------------------------------------------------- |
+| `today`               | current conditions                                   |
+| `tomorrow`            | tomorrow's forecast                                  |
+| `weekly`              | 7 day forecast                                       |
+| `fortnight`           | 14 day forecast (two weeks)                          |
+| `3h` `6h` `12h` `24h` | hourly forecast over the next 24 hours, at that step |
+| `locate`              | resolve a place name to latitude and longitude       |
+| `cache`               | manage the place name cache                          |
 
 Every weather command accepts a location as a place name or a coordinate pair,
 and each of them — `locate` included — takes `--json` for scripting (`cache`

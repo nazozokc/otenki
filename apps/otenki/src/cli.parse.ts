@@ -1,8 +1,9 @@
 /**
  * The command contract and the argument parser. Commander would do this, but
- * the surface area here is six subcommands, five boolean flags and one variadic
- * argument, so a table of commands plus a short parser is the cheaper trade: it
- * keeps the runtime free of dependencies and the behaviour completely legible.
+ * the surface area here is a dozen subcommands, a handful of boolean flags and
+ * one variadic argument, so a table of commands plus a short parser is the
+ * cheaper trade: it keeps the runtime free of dependencies and the behaviour
+ * completely legible.
  */
 
 import type { Config } from "./config.ts";

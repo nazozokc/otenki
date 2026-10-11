@@ -145,6 +145,7 @@ apps/otenki/test/support.ts        色の固定と共通のヘルパー（テス
 | `forecast.ts`      | Forecast API の要求と応答の型付け                             |
 | `today.ts`         | `today` の出力                                                |
 | `daily.ts`         | `tomorrow` `weekly` `fortnight` の出力                        |
+| `hourly.ts`        | `3h` `6h` `12h` `24h` の出力                                  |
 | `locate.ts`        | `locate` の出力                                               |
 | `fzf.ts`           | fzf の候補行、選択の突き合わせ、プロセス起動                  |
 | `format.ts`        | 温度、風、湿度、日付の表示形式                                |

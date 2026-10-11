@@ -23,7 +23,7 @@ features:
   - title: 地名だけで引ける
     details: 函館も横浜市 神奈川も、そのまま 1 引数で通る。日本語のサフィックス展開とランキングで自治体を当てる。
   - title: 今から 14 日先まで
-    details: today / tomorrow / weekly / fortnight の 4 コマンド。API の上限は 16 日、表示は 2 週間の 14 日まで。
+    details: today / tomorrow / weekly / fortnight に加えて、直近 24 時間を 3・6・12・24 時間おきに見る時間別予報も。API の上限は 16 日、表示は 2 週間の 14 日まで。
   - title: 端末前提
     details: TTY では色付き、パイプへ渡せば素の色。NO_COLOR も尊重するので、そのままスクリプトに使える。
 ---
@@ -52,6 +52,7 @@ bunx otenki-cli today 函館                # 現在の天気
 bunx otenki-cli tomorrow 横浜             # 明日の予報
 bunx otenki-cli weekly 35.69 139.69       # 7 日間。座標でもよい
 bunx otenki-cli fortnight 東京            # 14 日間（2 週間）
+bunx otenki-cli 3h 函館                   # 直近 24 時間を 3 時間おきに
 bunx otenki-cli locate 横浜 --all         # 同名地の候補を全部見る
 bunx otenki-cli locate 横浜 --pick        # fzf で選ぶ
 bunx otenki-cli today 横浜 --json         # スクリプト用に生 JSON

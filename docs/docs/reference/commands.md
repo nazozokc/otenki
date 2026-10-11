@@ -8,11 +8,11 @@
 | `-h, --help`    | ヘルプを表示               |
 | `--no-config`   | 設定ファイルを読まずに実行 |
 
-`--json` は `today` `tomorrow` `weekly` `fortnight` `locate` にあります。`cache` は `--clear` だけです。
+`--json` は `today` `tomorrow` `weekly` `fortnight` `3h` `6h` `12h` `24h` `locate` にあります。`cache` は `--clear` だけです。
 
 `-V` は Nix ビルドで焼き込まれた `OTENKI_VERSION` を最優先し、無ければ `package.json` の `version` を読みます。
 
-`today` `tomorrow` `weekly` `fortnight` の地点は、[設定ファイル](/reference/config) に `location` を置けば省略できます。`command` を置けば、コマンド名なしの `otenki` がそのコマンドとして動きます。設定ファイルは `$XDG_CONFIG_HOME/otenki/config.json` です。
+`today` `tomorrow` `weekly` `fortnight` `3h` `6h` `12h` `24h` の地点は、[設定ファイル](/reference/config) に `location` を置けば省略できます。`command` を置けば、コマンド名なしの `otenki` がそのコマンドとして動きます。設定ファイルは `$XDG_CONFIG_HOME/otenki/config.json` です。
 
 ## today
 
@@ -103,6 +103,37 @@ $ bunx otenki-cli fortnight 横浜
 14 日は 2 週間分です。Forecast API の上限は 16 日で、`forecast_days` を 17 以上にすると拒否されます。
 
 過去の天気が必要な場合は [Historical Weather API](https://open-meteo.com/en/docs/historical-weather-api) を直接使ってください。
+
+| オプション | 内容           |
+| ---------- | -------------- |
+| `--json`   | 生 JSON を出力 |
+
+## 3h / 6h / 12h / 24h
+
+直近 24 時間を、その間隔で間引いた時間別予報です。
+
+```sh
+bunx otenki-cli 3h <location...>
+bunx otenki-cli 6h <location...>
+bunx otenki-cli 12h <location...>
+bunx otenki-cli 24h <location...>
+```
+
+現在の時刻の正時から 24 時間先までを、`3h` なら 3 時間おき、`6h` なら 6 時間おきに並べます。行数は間隔で決まり、`3h` は 8 行、`6h` は 4 行、`12h` は 2 行、`24h` は 24 時間後（明日の同じ時刻）の 1 行になります。
+
+```console
+$ bunx otenki-cli 3h 函館
+函館市 北海道 — 3時間おき（8件）
+日時           天気                 気温    降水  確率      風速
+────────────────────────────────────────────────────────────────
+2026-10-10 16  🌤️ 晴れ            19.8℃  0.0 mm    0%  4.3 km/h
+2026-10-10 19  ☀️ 快晴            17.7℃  0.0 mm    0%  6.7 km/h
+2026-10-10 22  🌤️ 晴れ            16.5℃  0.0 mm    0%  5.8 km/h
+```
+
+時刻は地点の現地時間です。列は `日時` `天気` `気温` `降水` `確率` `風速` で、並びと色付けは `weekly` と同じ規則です（数字は右寄せ、降水と確率は水色、雷雨はマゼンタ、大雨・大雪は太字の赤）。
+
+期間は 24 時間で固定なので、設定ファイルの `days` はこの 4 コマンドには効きません。
 
 | オプション | 内容           |
 | ---------- | -------------- |

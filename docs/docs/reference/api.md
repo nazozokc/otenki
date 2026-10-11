@@ -70,18 +70,21 @@
 
 | 変数                            | コマンド                        |
 | ------------------------------- | ------------------------------- |
-| `temperature_2m`                | `today`                         |
+| `temperature_2m`                | `today` `3h` `6h` `12h` `24h`   |
 | `apparent_temperature`          | `today`                         |
-| `weather_code`                  | `today`                         |
-| `wind_speed_10m`                | `today`                         |
+| `weather_code`                  | `today` `3h` `6h` `12h` `24h`   |
+| `wind_speed_10m`                | `today` `3h` `6h` `12h` `24h`   |
 | `relative_humidity_2m`          | `today`                         |
-| `precipitation`                 | `today`                         |
+| `precipitation`                 | `today` `3h` `6h` `12h` `24h`   |
+| `precipitation_probability`     | `3h` `6h` `12h` `24h`           |
 | `temperature_2m_max` `_min`     | `tomorrow` `weekly` `fortnight` |
 | `precipitation_sum`             | `tomorrow` `weekly` `fortnight` |
 | `precipitation_probability_max` | `tomorrow` `weekly` `fortnight` |
 | `wind_speed_10m_max`            | `tomorrow` `weekly` `fortnight` |
 
 `forecast_days` は 1 から 16 に丸めます。API 側が 17 以上を拒否するためです。
+
+時間別予報（`3h` `6h` `12h` `24h`）は応答の `hourly` を使います。`hourly.time` は座標の現地時刻で、常にその日の 0 時から並ぶので、`utc_offset_seconds` でクライアント時刻を現地へずらし、現在の正時以降の 24 件だけを取ります。要求は `forecast_days=2` で、ウィンドウが丸一日ぶんに必ず届く最小値です。
 
 ## HTTP の扱い
 

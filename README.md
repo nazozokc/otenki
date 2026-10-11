@@ -51,14 +51,15 @@ built by tsdown, so a run loads a single module instead of the TypeScript source
 
 ## Commands
 
-| Command     | Description                                    |
-| ----------- | ---------------------------------------------- |
-| `today`     | current conditions                             |
-| `tomorrow`  | tomorrow's forecast                            |
-| `weekly`    | 7 day forecast                                 |
-| `fortnight` | 14 day forecast (see the note below)           |
-| `locate`    | resolve a place name to latitude and longitude |
-| `cache`     | manage the place name cache                    |
+| Command               | Description                                         |
+| --------------------- | --------------------------------------------------- |
+| `today`               | current conditions                                  |
+| `tomorrow`            | tomorrow's forecast                                 |
+| `weekly`              | 7 day forecast                                      |
+| `fortnight`           | 14 day forecast (see the note below)                |
+| `3h` `6h` `12h` `24h` | hourly forecast over the next 24 hours at that step |
+| `locate`              | resolve a place name to latitude and longitude      |
+| `cache`               | manage the place name cache                         |
 
 Every weather command accepts a location either as a place name or as a
 coordinate pair, and each of them — `locate` included — takes `--json` for

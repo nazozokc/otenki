@@ -5,6 +5,7 @@ import { dispatch } from "./cli.dispatch.ts";
 import { type Command, UsageError } from "./cli.parse.ts";
 import { type Config, loadConfig, stripNoConfig } from "./config.ts";
 import { fortnight, tomorrow, weekly } from "./daily.ts";
+import { every } from "./hourly.ts";
 import { locate } from "./locate.ts";
 import { sanitizeText } from "./sanitize.ts";
 import { error as styleError, setColorMode } from "./style.ts";
@@ -20,6 +21,21 @@ const LOCATION = {
   name: "location",
   description: "place name or latitude longitude pair",
 };
+
+/**
+ * The hourly views, one subcommand per step: `3h`, `6h`, `12h`, `24h`. All of
+ * them look a fixed day ahead and just sample it more or less finely, so a
+ * larger step is a shorter table rather than a different command.
+ */
+const INTERVAL_HOURS = [3, 6, 12, 24] as const;
+
+const intervalCommands: Command[] = INTERVAL_HOURS.map((hours) => ({
+  name: `${hours}h`,
+  description: `${hours}-hourly forecast over the next 24 hours`,
+  argument: LOCATION,
+  options: [json],
+  run: (args, flags, config) => every(args, flags, config, hours),
+}));
 
 const commands: Command[] = [
   {
@@ -50,6 +66,7 @@ const commands: Command[] = [
     options: [json],
     run: fortnight,
   },
+  ...intervalCommands,
   {
     name: "locate",
     description: "resolve a place name to latitude and longitude",

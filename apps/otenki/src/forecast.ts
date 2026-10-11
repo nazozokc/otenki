@@ -26,8 +26,19 @@ export type DailyWeather = {
   windSpeedMax: number | null;
 };
 
+export type HourlyWeather = {
+  time: string;
+  temperature: number | null;
+  weatherCode: number;
+  precipitationProbability: number | null;
+  windSpeed: number | null;
+  precipitation: number | null;
+};
+
 type ForecastResponse = {
   reason?: string;
+  /** The offset the API used for `time`, which is wall clock at the coordinates. */
+  utc_offset_seconds?: number;
   current?: {
     time?: string;
     temperature_2m?: number;
@@ -45,6 +56,14 @@ type ForecastResponse = {
     precipitation_sum?: (number | null)[];
     precipitation_probability_max?: (number | null)[];
     wind_speed_10m_max?: (number | null)[];
+  };
+  hourly?: {
+    time?: string[];
+    temperature_2m?: (number | null)[];
+    weather_code?: (number | null)[];
+    precipitation_probability?: (number | null)[];
+    wind_speed_10m?: (number | null)[];
+    precipitation?: (number | null)[];
   };
 };
 
@@ -164,4 +183,66 @@ export const fetchDaily = async (
     precipitationProbabilityMax: at(daily.precipitation_probability_max, index),
     windSpeedMax: at(daily.wind_speed_10m_max, index),
   }));
+};
+
+/** How far ahead an interval view looks, and so how many raw hours it keeps. */
+export const HOURLY_WINDOW_HOURS = 24;
+
+/**
+ * The next {@link HOURLY_WINDOW_HOURS} hours, hour by hour, for the interval
+ * commands to sample down. The API always begins `hourly.time` at local
+ * midnight whatever the wall clock says, so the window is found by shifting
+ * the client clock into the coordinates' own timezone with the offset the
+ * response reports, then taking the first entry at or after that hour.
+ */
+export const fetchHourly = async (
+  latitude: number,
+  longitude: number,
+  units: Units = "metric",
+): Promise<HourlyWeather[]> => {
+  const url = buildUrl(latitude, longitude, units);
+  url.searchParams.set(
+    "hourly",
+    [
+      "temperature_2m",
+      "weather_code",
+      "precipitation_probability",
+      "wind_speed_10m",
+      "precipitation",
+    ].join(","),
+  );
+  // Two days is the smallest request that still covers a full window that
+  // starts at the current hour of day zero.
+  url.searchParams.set("forecast_days", "2");
+
+  const response = await fetchForecast(url);
+  const hourly = response.hourly;
+  if (hourly?.time === undefined) {
+    throw new ForecastError("Weather API が hourly データを返しませんでした");
+  }
+
+  const offsetMs = (response.utc_offset_seconds ?? 0) * 1000;
+  const from = `${new Date(Date.now() + offsetMs).toISOString().slice(0, 13)}:00`;
+  const start = hourly.time.findIndex((time) => time >= from);
+
+  if (start === -1) return [];
+
+  const at = <T>(values: T[] | undefined, index: number): T | null =>
+    values?.[index] ?? null;
+
+  return hourly.time
+    .slice(start, start + HOURLY_WINDOW_HOURS)
+    .map((time, offset) => {
+      const index = start + offset;
+      // Search for the match on the raw string above, then clean the one that
+      // is printed: the date rides the table straight to the terminal.
+      return {
+        time: sanitizeText(time),
+        temperature: at(hourly.temperature_2m, index),
+        weatherCode: at(hourly.weather_code, index) ?? -1,
+        precipitationProbability: at(hourly.precipitation_probability, index),
+        windSpeed: at(hourly.wind_speed_10m, index),
+        precipitation: at(hourly.precipitation, index),
+      };
+    });
 };
