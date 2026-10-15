@@ -105,11 +105,33 @@ const readConfig = async (skip: boolean): Promise<Config | null> => {
 };
 
 const { argv, noConfig } = stripNoConfig(process.argv.slice(2));
-const config = await readConfig(noConfig);
+const first = argv[0];
+const command = commands.find((candidate) => candidate.name === first);
+const commandArgs = argv.slice(1);
+const literalMarker = commandArgs.indexOf("--");
+const commandOptions =
+  literalMarker === -1 ? commandArgs : commandArgs.slice(0, literalMarker);
+const isInformationalInvocation =
+  first === "-V" ||
+  first === "--version" ||
+  first === "-h" ||
+  first === "--help" ||
+  first === "help" ||
+  (command !== undefined &&
+    commandOptions.some(
+      (token) =>
+        token === "-V" ||
+        token === "--version" ||
+        token === "-h" ||
+        token === "--help",
+    ));
+const config = isInformationalInvocation ? {} : await readConfig(noConfig);
 
 if (config === null) {
   process.exitCode = 1;
 } else {
+  // Help and version are useful even when the config itself is what needs
+  // fixing, so informational invocations deliberately use defaults.
   // Before dispatch: every styled byte the run prints — including dispatch's
   // own errors — obeys the configured colour policy.
   setColorMode(config.color);
