@@ -20,7 +20,12 @@ const runCliWithMalformedConfig = async (
   writeFileSync(join(dir, "otenki", "config.json"), "{not json");
 
   const child = Bun.spawn(
-    [process.execPath, "run", new URL("../src/index.ts", import.meta.url).pathname, ...args],
+    [
+      process.execPath,
+      "run",
+      new URL("../src/index.ts", import.meta.url).pathname,
+      ...args,
+    ],
     {
       env: { ...process.env, XDG_CONFIG_HOME: dir },
       stdout: "pipe",
