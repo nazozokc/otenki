@@ -1,5 +1,6 @@
 import type { Units } from "./config.ts";
 import { fetchJson } from "./http.ts";
+import { hourlyWindow } from "./hourly-time.ts";
 import { sanitizeText } from "./sanitize.ts";
 const FORECAST_ENDPOINT = "https://api.open-meteo.com/v1/forecast";
 
@@ -39,6 +40,8 @@ type ForecastResponse = {
   reason?: string;
   /** The offset the API used for `time`, which is wall clock at the coordinates. */
   utc_offset_seconds?: number;
+  /** IANA zone needed to render Unix timestamps across daylight-saving changes. */
+  timezone?: string;
   current?: {
     time?: string;
     temperature_2m?: number;
@@ -58,7 +61,7 @@ type ForecastResponse = {
     wind_speed_10m_max?: (number | null)[];
   };
   hourly?: {
-    time?: string[];
+    time?: (string | number)[];
     temperature_2m?: (number | null)[];
     weather_code?: (number | null)[];
     precipitation_probability?: (number | null)[];
@@ -214,35 +217,36 @@ export const fetchHourly = async (
   // Two days is the smallest request that still covers a full window that
   // starts at the current hour of day zero.
   url.searchParams.set("forecast_days", "2");
+  // ISO timestamps use one fixed offset for the whole response, which shifts
+  // local times after a DST transition. Unix timestamps preserve real hours.
+  url.searchParams.set("timeformat", "unixtime");
 
   const response = await fetchForecast(url);
   const hourly = response.hourly;
   if (hourly?.time === undefined) {
     throw new ForecastError("Weather API が hourly データを返しませんでした");
   }
+  const times = hourly.time;
 
-  const offsetMs = (response.utc_offset_seconds ?? 0) * 1000;
-  const from = `${new Date(Date.now() + offsetMs).toISOString().slice(0, 13)}:00`;
-  const start = hourly.time.findIndex((time) => time >= from);
-
-  if (start === -1) return [];
+  const window = hourlyWindow(
+    times,
+    Date.now(),
+    response.timezone,
+    response.utc_offset_seconds,
+    HOURLY_WINDOW_HOURS,
+  );
 
   const at = <T>(values: T[] | undefined, index: number): T | null =>
     values?.[index] ?? null;
 
-  return hourly.time
-    .slice(start, start + HOURLY_WINDOW_HOURS)
-    .map((time, offset) => {
-      const index = start + offset;
-      // Search for the match on the raw string above, then clean the one that
-      // is printed: the date rides the table straight to the terminal.
-      return {
-        time: sanitizeText(time),
-        temperature: at(hourly.temperature_2m, index),
-        weatherCode: at(hourly.weather_code, index) ?? -1,
-        precipitationProbability: at(hourly.precipitation_probability, index),
-        windSpeed: at(hourly.wind_speed_10m, index),
-        precipitation: at(hourly.precipitation, index),
-      };
-    });
+  return window.map(({ index, time }) => ({
+    // The date rides the table straight to the terminal, so clean it at
+    // the API boundary just like other external fields.
+    time: sanitizeText(time),
+    temperature: at(hourly.temperature_2m, index),
+    weatherCode: at(hourly.weather_code, index) ?? -1,
+    precipitationProbability: at(hourly.precipitation_probability, index),
+    windSpeed: at(hourly.wind_speed_10m, index),
+    precipitation: at(hourly.precipitation, index),
+  }));
 };

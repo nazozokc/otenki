@@ -158,6 +158,7 @@ describe("interval request", () => {
     expect(url).toContain("longitude=139.69");
     expect(url).toContain("timezone=auto");
     expect(url).toContain("forecast_days=2");
+    expect(url).toContain("timeformat=unixtime");
     expect(url).toContain("temperature_2m");
     expect(url).toContain("weather_code");
     expect(url).toContain("precipitation_probability");
@@ -170,6 +171,58 @@ describe("interval request", () => {
     expect(url).toContain("temperature_unit=fahrenheit");
     expect(url).toContain("wind_speed_unit=mph");
     expect(url).toContain("precipitation_unit=inch");
+  });
+});
+
+describe("DST-aware hourly timestamps", () => {
+  test("starts at the current instant through the repeated fall-back hour", async () => {
+    const nowUtc = Date.UTC(2026, 10, 1, 6, 0, 0);
+    const startUtc = Date.UTC(2026, 10, 1, 4, 0, 0);
+    const times = Array.from(
+      { length: 48 },
+      (_, index) => (startUtc + index * 3_600_000) / 1000,
+    );
+    const out: string[] = [];
+    const log = spyOn(console, "log").mockImplementation(
+      (...args: unknown[]) => {
+        out.push(args.join(" "));
+      },
+    );
+    const err = spyOn(console, "error").mockImplementation(() => {});
+    const now = spyOn(Date, "now").mockReturnValue(nowUtc);
+    const network = spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          utc_offset_seconds: -18_000,
+          timezone: "America/New_York",
+          hourly: {
+            time: times,
+            temperature_2m: times.map(() => 20),
+            weather_code: times.map(() => 1),
+            precipitation_probability: times.map(() => 10),
+            wind_speed_10m: times.map(() => 3),
+            precipitation: times.map(() => 0),
+          },
+        }),
+        { status: 200 },
+      ),
+    );
+
+    try {
+      await every(["35.69", "139.69"], { json: true }, {}, 1);
+    } finally {
+      network.mockRestore();
+      log.mockRestore();
+      err.mockRestore();
+      now.mockRestore();
+    }
+
+    const result = JSON.parse(out.join("\n"));
+    expect(result.hours).toHaveLength(24);
+    expect(result.hours[0].time).toBe("2026-11-01T01:00");
+    // The first 01:00 (EDT) is in the past; selection starts at 06:00 UTC,
+    // the second 01:00 (EST), then advances to 02:00 local time.
+    expect(result.hours[1].time).toBe("2026-11-01T02:00");
   });
 });
 

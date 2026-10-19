@@ -107,6 +107,7 @@ apps/otenki/test/fzf.test.ts       fzf の候補行と選択の突き合わせ
 apps/otenki/test/location.test.ts  座標と地名の振り分け
 apps/otenki/test/table.test.ts     表示幅と表の組版
 apps/otenki/test/daily.test.ts     予報表と今日・明日の出力
+apps/otenki/test/hourly.test.ts    時間別予報の窓と出力
 apps/otenki/test/locate.test.ts    locate の見出しと候補表
 apps/otenki/test/cache.test.ts     キャッシュの有効期限と形状検証
 apps/otenki/test/config.test.ts    設定ファイルの読込とバリデーション
@@ -143,6 +144,7 @@ apps/otenki/test/support.ts        色の固定と共通のヘルパー（テス
 | `sanitize.ts`      | 外来文字列からの制御シーケンス除去                            |
 | `cache.ts`         | `$XDG_STATE_HOME` 配下の places.json の読み書きと 30 日の TTL |
 | `forecast.ts`      | Forecast API の要求と応答の型付け                             |
+| `hourly-time.ts`   | 時間別データの切り出しとタイムゾーン付き時刻表示              |
 | `today.ts`         | `today` の出力                                                |
 | `daily.ts`         | `tomorrow` `weekly` `fortnight` の出力                        |
 | `hourly.ts`        | `3h` `6h` `12h` `24h` の出力                                  |
