@@ -140,7 +140,7 @@ apps/otenki/test/support.ts        色の固定と共通のヘルパー（テス
 | `width.ts`         | 端末セル幅の計算（CJK・絵文字・ANSI 除去）                    |
 | `table.ts`         | 表の組版                                                      |
 | `location.ts`      | 引数を座標か地名に振り分け                                    |
-| `geocode.ts`       | サフィックス展開、候補の順位付け、地名ラベルの組み立て        |
+| `geocode.ts`       | サフィックス展開と単語分割、順位付け、ラベル組み立て          |
 | `sanitize.ts`      | 外来文字列からの制御シーケンス除去                            |
 | `cache.ts`         | `$XDG_STATE_HOME` 配下の places.json の読み書きと 30 日の TTL |
 | `forecast.ts`      | Forecast API の要求と応答の型付け                             |

@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   candidateQueries,
   matchesTokens,
+  passes,
   placeLabel,
   queryTokens,
   rankCandidates,
@@ -162,6 +163,81 @@ describe("matchesTokens", () => {
 
     expect(matchesTokens(paris, ["fr"])).toBe(true);
     expect(matchesTokens(paris, ["France"])).toBe(true);
+  });
+
+  test("ignores punctuation when comparing an abbreviation", () => {
+    // The caller writes `Washington DC` while the index answers D.C.
+    const washington = place({ name: "Washington D.C." });
+
+    expect(matchesTokens(washington, ["DC"])).toBe(true);
+  });
+
+  test("matches a punctuated spelling through an unpunctuated token", () => {
+    const saint = place({ name: "Port-au-Prince" });
+
+    expect(matchesTokens(saint, ["Prince"])).toBe(true);
+  });
+
+  test("matches nothing when a token is nothing but punctuation", () => {
+    // An empty needle would otherwise sit inside every field at once.
+    expect(matchesTokens(place({ name: "Tokyo" }), ["."])).toBe(false);
+    expect(matchesTokens(place({ name: "Tokyo" }), ["..."])).toBe(false);
+  });
+});
+
+describe("passes", () => {
+  test("keeps the original two passes for a Japanese two word query", () => {
+    expect(passes(["横浜市", "神奈川"])).toEqual([
+      { primary: "横浜市", filters: ["神奈川"] },
+      { primary: "神奈川", filters: ["横浜市"] },
+    ]);
+  });
+
+  test("keeps both orders and the phrase for an English two word query", () => {
+    expect(passes(["New", "York"])).toEqual([
+      { primary: "New", filters: ["York"] },
+      { primary: "New York", filters: [] },
+      { primary: "York", filters: ["New"] },
+    ]);
+  });
+
+  test("offers every prefix of the query as the name", () => {
+    // `Kansas` alone never returns Kansas City, so the two word form has to
+    // be searched too.
+    expect(passes(["Kansas", "City", "Missouri"])).toContainEqual({
+      primary: "Kansas City",
+      filters: ["Missouri"],
+    });
+    expect(passes(["San", "Jose", "California"])).toContainEqual({
+      primary: "San Jose",
+      filters: ["California"],
+    });
+  });
+
+  test("keeps the full phrase as its own pass", () => {
+    expect(passes(["New", "York"])).toContainEqual({
+      primary: "New York",
+      filters: [],
+    });
+  });
+
+  test("offers the phrase past the word cap too", () => {
+    const tokens = ["Port", "of", "Spain", "Trinidad", "and", "Tobago"];
+    expect(passes(tokens)).toContainEqual({
+      primary: "Port of Spain Trinidad and Tobago",
+      filters: [],
+    });
+  });
+
+  test("skips Japanese primaries that join words into a dead phrase", () => {
+    const names = passes(["神奈川", "横浜市"]).map((pass) => pass.primary);
+    expect(names).not.toContain("神奈川 横浜市");
+  });
+
+  test("does not repeat the first token as the swap", () => {
+    expect(passes(["横浜", "横浜"])).toEqual([
+      { primary: "横浜", filters: ["横浜"] },
+    ]);
   });
 });
 

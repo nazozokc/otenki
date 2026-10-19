@@ -175,11 +175,21 @@ const filterFields = (place: GeocodeResult): FilterField[] => {
 };
 
 /**
+ * Case and punctuation folding for filter comparisons. `DC` has to reach
+ * `D.C.` and `St Louis` has to reach `St. Louis`, since neither the caller
+ * nor the index agrees on how to punctuate an abbreviation. Only non-space
+ * characters are stripped, so a two word field stays two words.
+ */
+const normalize = (text: string): string =>
+  text.toLowerCase().replace(/[.,'"’\-_]/g, "");
+
+/**
  * Exported for tests. A token matches when it is contained in a field or the
  * other way round: `神奈川` has to reach `神奈川県` and `神奈川県` has to reach
  * `神奈川`, since the caller and the index disagree about whether the suffix
- * is spelled out. Case folding only affects ASCII, so `Tokyo` and `tokyo`
- * compare equal.
+ * is spelled out. Case and punctuation folding see `Washington DC` through
+ * `Washington D.C.` for the same reason. A token that is nothing but
+ * punctuation matches nothing rather than everything.
  *
  * The country code is the one exception: it is two letters, so the reverse
  * direction finds it inside almost any longer token — `Angeles` contains the
@@ -192,10 +202,13 @@ export const matchesTokens = (
   tokens: string[],
 ): boolean =>
   tokens.every((token) => {
-    const needle = token.toLowerCase();
+    const needle = normalize(token);
+    if (needle === "") return false;
     return filterFields(place).some(({ text, reverse }) => {
-      const hay = text.toLowerCase();
-      return hay.includes(needle) || (reverse && needle.includes(hay));
+      const hay = normalize(text);
+      return (
+        hay.includes(needle) || (reverse && hay !== "" && needle.includes(hay))
+      );
     });
   });
 
@@ -243,29 +256,60 @@ const ladder = async (
 };
 
 /**
- * The two orders worth trying: the name first (`横浜市 神奈川`), then the
- * documented swap (`神奈川 横浜市`). Two passes cap the cost whatever the
- * caller typed — a twenty token typo would otherwise walk the ladder once per
- * token. Only called for a multi token query, so both tokens exist.
+ * The longest name worth trying as the name half, in words. The API's `name`
+ * search matches every word of the primary against the one indexed name, so
+ * `Kansas City Missouri` has to try `Kansas City`, not `Kansas` — the top ten
+ * for `Kansas` alone is nothing but small towns named Kansas. Bounded so a
+ * twenty token typo cannot walk a twenty step ladder.
  */
-const passes = (tokens: string[]): { primary: string; filters: string[] }[] => {
-  const head = tokens[0];
+const MAX_NAME_WORDS = 4;
+
+/**
+ * Exported for tests. The orders worth trying: every prefix of the query as
+ * the name with the rest as filters (`Kansas City` + `Missouri`, `San Jose` +
+ * `California`, `Ho Chi Minh City` + `Vietnam`), the whole phrase as typed
+ * (`New York`), and the documented swap (`神奈川 横浜市`). A Japanese prefix
+ * with a space in it joins words the API treats as one phrase that matches
+ * nothing, and the suffix ladder only ever helps a bare name, so those are
+ * skipped — leaving the original two passes for Japanese input. The word cap
+ * keeps the cost bounded whatever the caller typed; a query past the cap
+ * still offers the full phrase, which is the only form that can match a name
+ * longer than the cap.
+ */
+export const passes = (
+  tokens: string[],
+): { primary: string; filters: string[] }[] => {
+  if (tokens.length < 2) return [];
+
+  const out: { primary: string; filters: string[] }[] = [];
+  const limit = Math.min(tokens.length, MAX_NAME_WORDS);
+  for (let size = 1; size <= limit; size++) {
+    const primary = tokens.slice(0, size).join(" ");
+    if (JAPANESE_SCRIPT.test(primary) && primary.includes(" ")) continue;
+    out.push({ primary, filters: tokens.slice(size) });
+  }
+
+  const phrase = tokens.join(" ");
+  if (tokens.length > limit && !JAPANESE_SCRIPT.test(phrase)) {
+    out.push({ primary: phrase, filters: [] });
+  }
+
   const second = tokens[1];
-  if (head === undefined || second === undefined) return [];
+  if (second !== undefined && second !== tokens[0]) {
+    out.push({
+      primary: second,
+      filters: tokens.filter((_, index) => index !== 1),
+    });
+  }
 
-  const byName = { primary: head, filters: tokens.slice(1) };
-  if (second === head) return [byName];
-
-  return [
-    byName,
-    { primary: second, filters: tokens.filter((_, index) => index !== 1) },
-  ];
+  return out;
 };
 
 /**
  * All candidates for a place name, best match first. A whitespace separated
- * query is read as name plus filters, so `横浜市 神奈川` narrows the ladder's
- * output to Kanagawa instead of asking the API to index both words at once.
+ * query is read as a name that may itself span a few words plus the filters
+ * that narrow it, so `横浜市 神奈川` narrows the ladder's output to Kanagawa
+ * and `Kansas City Missouri` reaches the city rather than the state.
  */
 export const geocode = async (
   query: string,
@@ -282,23 +326,13 @@ export const geocode = async (
     const tokens = queryTokens(query);
     if (tokens.length < 2) return ladder(query, count, language);
 
-    // Both orders are searched and the survivors pooled rather than returning
-    // whichever pass answers first: `神奈川 横浜市` has to reach 横浜市 even
-    // though the swap's first token also names a district inside it, and the
-    // ranker already knows a PPLA city outranks a PPL. The filters still do
-    // the narrowing — the swap only widens what is on offer, never the answer
-    // to a query that matched nothing.
+    // Every pass is searched and the survivors pooled rather than returning
+    // whichever answers first: `神奈川 横浜市` has to reach 横浜市 even though
+    // the swap's first token also names a district inside it, and the ranker
+    // already knows a PPLA city outranks a PPL. The filters still do the
+    // narrowing — the extra passes only widen what is on offer, never the
+    // answer to a query that matched nothing.
     const searches = passes(tokens);
-
-    // Plus the phrase exactly as typed: `New York` is a name with a space in
-    // it, and neither half is one, so only the joined form can find it. This
-    // is also every result the split ever produced before, unfiltered, which
-    // is what keeps the new path from losing a match the old one had. A
-    // Japanese phrase matches nothing at all (the bug this replaced) so it is
-    // not worth the ladder batch.
-    if (!JAPANESE_SCRIPT.test(query)) {
-      searches.push({ primary: query.trim(), filters: [] });
-    }
 
     const found = new Map<number, GeocodeResult>();
     for (const { primary, filters } of searches) {
