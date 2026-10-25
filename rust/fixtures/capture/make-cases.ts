@@ -1,56 +1,24 @@
 #!/usr/bin/env bun
 // Emits cases.jsonl. Review the source here; run to rewrite the manifest:
-//   bun rust/fixtures/capture/make-cases.ts
+//   bun rust/fixtures/capture/make-cases.ts [outdir]
 // The manifest stays in the repo so `capture.ts` reads it without this script.
 
-import { writeFileSync } from "node:fs";
-
-type FixtureSpec = {
-  // Governs which URL the answer serves. `status` and `networkError` are
-  // transport-level; `body` is the JSON or text the endpoint returned.
-  kind: "geocode" | "forecast-current" | "forecast-daily" | "forecast-hourly";
-  name?: string;
-  language?: "ja" | "en";
-  latitude?: number;
-  longitude?: number;
-  units?: "metric" | "imperial";
-  days?: number;
-  status?: number;
-  body?: unknown;
-  networkError?: boolean;
-};
-
-type State = {
-  config?: object;
-  configRaw?: string;
-  cache?: Record<string, { savedAtDaysAgo: number; results: unknown[] }>;
-  cacheRaw?: string;
-  snapshot?: boolean;
-};
-
-type Case = {
-  id: string;
-  group: string;
-  argv: string[];
-  state?: State;
-  fixtures?: FixtureSpec[];
-};
+import { type Case } from "./contracts.ts";
 
 const cases: Case[] = [];
 
-const cli = (id: string, label: string, argv: string[]): void => {
-  cases.push({ id: `${id}-${label}`, group: "cli", argv });
-};
-
-const better = (
+const entry = (
   group: string,
   id: string,
   label: string,
   argv: string[],
-  extra: Omit<Case, "id" | "group" | "argv"> = {},
+  extra: Omit<Partial<Case>, "id" | "group" | "argv"> = {},
 ): void => {
   cases.push({ id: `${id}-${label}`, group, argv, ...extra });
 };
+
+const cli = (id: string, label: string, argv: string[]): void =>
+  entry("cli", id, label, argv);
 
 // ── Plain CLI surface: no network, no state ───────────────────────────────
 
@@ -69,14 +37,14 @@ cli("012", "locate-missing-arg", ["locate"]);
 
 // ── today ─────────────────────────────────────────────────────────────────
 
-better("today", "020", "ascii", ["today", "Tokyo"]);
-better("today", "021", "json-ja", ["today", "--json", "東京"]);
-better("today", "022", "ja-bare", ["today", "函館"]);
-better("today", "023", "ja-composite", ["today", "横浜市", "神奈川"]);
-better("today", "024", "en-multiword", ["today", "Kansas", "City", "Missouri"]);
+entry("today", "020", "ascii", ["today", "Tokyo"]);
+entry("today", "021", "json-ja", ["today", "--json", "東京"]);
+entry("today", "022", "ja-bare", ["today", "函館"]);
+entry("today", "023", "ja-composite", ["today", "横浜市", "神奈川"]);
+entry("today", "024", "en-multiword", ["today", "Kansas", "City", "Missouri"]);
 
 // An OK response without `current`. fixtures: coordinates on mars? no — 0,0.
-better("today", "025", "current-missing", ["today", "0", "0"], {
+entry("today", "025", "current-missing", ["today", "0", "0"], {
   fixtures: [
     {
       kind: "forecast-current",
@@ -90,33 +58,33 @@ better("today", "025", "current-missing", ["today", "0", "0"], {
     },
   ],
 });
-better("today", "026", "coords", ["today", "41.77,140.73"]);
-better("today", "027", "imperial", ["today", "東京"], {
+entry("today", "026", "coords", ["today", "41.77,140.73"]);
+entry("today", "027", "imperial", ["today", "東京"], {
   state: { config: { units: "imperial" } },
 });
 
 // ── tomorrow ──────────────────────────────────────────────────────────────
 
-better("tomorrow", "030", "ja", ["tomorrow", "函館"]);
-better("tomorrow", "031", "json", ["tomorrow", "--json", "東京"]);
+entry("tomorrow", "030", "ja", ["tomorrow", "函館"]);
+entry("tomorrow", "031", "json", ["tomorrow", "--json", "東京"]);
 
 // ── weekly / fortnight ────────────────────────────────────────────────────
 
-better("weekly", "040", "en", ["weekly", "London"]);
-better("weekly", "041", "json-ja", ["weekly", "--json", "東京"]);
-better("weekly", "042", "imperial", ["weekly", "London"], {
+entry("weekly", "040", "en", ["weekly", "London"]);
+entry("weekly", "041", "json-ja", ["weekly", "--json", "東京"]);
+entry("weekly", "042", "imperial", ["weekly", "London"], {
   state: { config: { units: "imperial" } },
 });
-better("fortnight", "050", "days-5", ["fortnight", "東京"], {
+entry("fortnight", "050", "days-5", ["fortnight", "東京"], {
   state: { config: { days: 5 } },
 });
 
 // ── hour views ────────────────────────────────────────────────────────────
 
-better("hourly", "060", "3h", ["3h", "東京"]);
-better("hourly", "061", "6h", ["6h", "東京"]);
-better("hourly", "062", "12h-ja", ["12h", "函館"]);
-better("hourly", "063", "24h-json", ["24h", "--json", "東京"]);
+entry("hourly", "060", "3h", ["3h", "東京"]);
+entry("hourly", "061", "6h", ["6h", "東京"]);
+entry("hourly", "062", "12h-ja", ["12h", "函館"]);
+entry("hourly", "063", "24h-json", ["24h", "--json", "東京"]);
 
 // A fixture with barely enough hours: the window wants 24 from 13:00 and only
 // finds 11 on the first day, so heading and row count follow what the API had.
@@ -148,7 +116,7 @@ const shortHourly = (hours: number): unknown => ({
     ),
   },
 });
-better("hourly", "064", "short", ["3h", "10.5", "52.0"], {
+entry("hourly", "064", "short", ["3h", "10.5", "52.0"], {
   fixtures: [
     {
       kind: "forecast-hourly",
@@ -183,7 +151,7 @@ const isoHourly = (): unknown => ({
     ),
   },
 });
-better("hourly", "065", "iso-legacy", ["3h", "10.6", "52.1"], {
+entry("hourly", "065", "iso-legacy", ["3h", "10.6", "52.1"], {
   fixtures: [
     {
       kind: "forecast-hourly",
@@ -198,13 +166,13 @@ better("hourly", "065", "iso-legacy", ["3h", "10.6", "52.1"], {
 
 // `東京` degenerates to a single hit on the live API, so `--all` and
 // `--pick` need a multi-candidate query (`London` returns several).
-better("locate", "070", "basic", ["locate", "東京"]);
-better("locate", "071", "all", ["locate", "London", "--all"]);
-better("locate", "072", "json", ["locate", "東京", "--json"]);
-better("locate", "073", "pick", ["locate", "London", "--pick"]);
-better("locate", "074", "miss", ["locate", "nosuchplace12345"]);
-better("locate", "075", "coords", ["locate", "41.77,140.73"]);
-better("locate", "076", "api-error", ["locate", "geocode-broken"], {
+entry("locate", "070", "basic", ["locate", "東京"]);
+entry("locate", "071", "all", ["locate", "London", "--all"]);
+entry("locate", "072", "json", ["locate", "東京", "--json"]);
+entry("locate", "073", "pick", ["locate", "London", "--pick"]);
+entry("locate", "074", "miss", ["locate", "nosuchplace12345"]);
+entry("locate", "075", "coords", ["locate", "41.77,140.73"]);
+entry("locate", "076", "api-error", ["locate", "geocode-broken"], {
   fixtures: [
     {
       kind: "geocode",
@@ -216,7 +184,7 @@ better("locate", "076", "api-error", ["locate", "geocode-broken"], {
 });
 
 // Geocoder transport failures, seen from `today`.
-better("locate", "077", "http-404", ["today", "geocode-http404"], {
+entry("locate", "077", "http-404", ["today", "geocode-http404"], {
   fixtures: [
     {
       kind: "geocode",
@@ -227,7 +195,7 @@ better("locate", "077", "http-404", ["today", "geocode-http404"], {
     },
   ],
 });
-better("locate", "078", "network-fail", ["today", "geocode-netfail"], {
+entry("locate", "078", "network-fail", ["today", "geocode-netfail"], {
   fixtures: [
     {
       kind: "geocode",
@@ -240,7 +208,7 @@ better("locate", "078", "network-fail", ["today", "geocode-netfail"], {
 
 // ── forecast transport failures ───────────────────────────────────────────
 
-better("errors", "080", "forecast-500", ["today", "51.0,139.0"], {
+entry("errors", "080", "forecast-500", ["today", "51.0,139.0"], {
   fixtures: [
     {
       kind: "forecast-current",
@@ -251,7 +219,7 @@ better("errors", "080", "forecast-500", ["today", "51.0,139.0"], {
     },
   ],
 });
-better("errors", "081", "forecast-400", ["today", "33.0,130.1"], {
+entry("errors", "081", "forecast-400", ["today", "33.0,130.1"], {
   fixtures: [
     {
       kind: "forecast-current",
@@ -262,7 +230,7 @@ better("errors", "081", "forecast-400", ["today", "33.0,130.1"], {
     },
   ],
 });
-better("errors", "082", "forecast-reason", ["today", "33.0,130.2"], {
+entry("errors", "082", "forecast-reason", ["today", "33.0,130.2"], {
   fixtures: [
     {
       kind: "forecast-current",
@@ -272,7 +240,7 @@ better("errors", "082", "forecast-reason", ["today", "33.0,130.2"], {
     },
   ],
 });
-better("errors", "083", "forecast-netfail", ["today", "44.1,141.1"], {
+entry("errors", "083", "forecast-netfail", ["today", "44.1,141.1"], {
   fixtures: [
     {
       kind: "forecast-current",
@@ -305,7 +273,7 @@ const staleEntry = {
   longitude: 2,
 };
 
-better("cache", "090", "clear", ["cache", "--clear"], {
+entry("cache", "090", "clear", ["cache", "--clear"], {
   state: {
     cache: {
       "2:東京": { savedAtDaysAgo: 0.5, results: [tokyoPlace] },
@@ -316,7 +284,7 @@ better("cache", "090", "clear", ["cache", "--clear"], {
   },
 });
 
-better("cache", "091", "hit", ["today", "東京"], {
+entry("cache", "091", "hit", ["today", "東京"], {
   state: {
     cache: { "2:東京": { savedAtDaysAgo: 0.5, results: [tokyoPlace] } },
     snapshot: true,
@@ -343,7 +311,7 @@ better("cache", "091", "hit", ["today", "東京"], {
   ],
 });
 
-better("cache", "092", "expired", ["today", "東京"], {
+entry("cache", "092", "expired", ["today", "東京"], {
   state: {
     cache: { "2:東京": { savedAtDaysAgo: 40, results: [staleEntry] } },
     snapshot: true,
@@ -370,7 +338,7 @@ better("cache", "092", "expired", ["today", "東京"], {
   ],
 });
 
-better("cache", "093", "poison", ["today", "東京"], {
+entry("cache", "093", "poison", ["today", "東京"], {
   state: {
     cacheRaw: JSON.stringify({
       "2:東京": { savedAt: "not-a-number", results: [] },
@@ -403,37 +371,37 @@ better("cache", "093", "poison", ["today", "東京"], {
 
 // ── config ────────────────────────────────────────────────────────────────
 
-better("config", "100", "location-array", ["today"], {
+entry("config", "100", "location-array", ["today"], {
   state: { config: { location: [35.6895, 139.6917] } },
 });
-better("config", "101", "location-name", ["today"], {
+entry("config", "101", "location-name", ["today"], {
   state: { config: { location: "函館市" } },
 });
-better("config", "102", "command-bare", [], {
+entry("config", "102", "command-bare", [], {
   state: { config: { command: "weekly", location: "函館" } },
 });
-better("config", "103", "command-unknown", [], {
+entry("config", "103", "command-unknown", [], {
   state: { config: { command: "nope" } },
 });
-better("config", "104", "color-always", ["today", "東京"], {
+entry("config", "104", "color-always", ["today", "東京"], {
   state: { config: { color: "always" } },
 });
-better("config", "105", "color-never", ["today", "東京"], {
+entry("config", "105", "color-never", ["today", "東京"], {
   state: { config: { color: "never" } },
 });
-better("config", "106", "bad-units", [], {
+entry("config", "106", "bad-units", [], {
   state: { config: { units: "fahrenheit" } },
 });
-better("config", "107", "days-range", [], {
+entry("config", "107", "days-range", [], {
   state: { config: { days: 20 } },
 });
-better("config", "108", "location-range", [], {
+entry("config", "108", "location-range", [], {
   state: { config: { location: [91, 10] } },
 });
-better("config", "109", "invalid-json", [], {
+entry("config", "109", "invalid-json", [], {
   state: { configRaw: "{ broken" },
 });
-better("config", "110", "unknown-key", [], {
+entry("config", "110", "unknown-key", [], {
   state: { config: { colo: "1" } },
 });
 
@@ -441,8 +409,7 @@ better("config", "110", "unknown-key", [], {
 
 const out = cases.map((item) => JSON.stringify(item, null, 0)).join("\n");
 
-const target =
-  process.argv[2] ??
-  new URL(".", import.meta.url).pathname.slice("file://".length - 1);
-writeFileSync(`${target}/cases.jsonl`, `${out}\n`);
-console.log(`${cases.length} cases -> cases.jsonl`);
+const target = process.argv[2] ?? import.meta.dir;
+const file = `${target}/cases.jsonl`;
+await Bun.write(file, `${out}\n`);
+console.log(`${cases.length} cases -> ${file}`);

@@ -16,14 +16,7 @@
  * real network, so `bun run start` keeps its natural behaviour.
  */
 
-type Stored = {
-  url: string;
-  status: number;
-  body: string;
-  contentType?: string;
-  /** A hand written fixture standing in for a connection failure. */
-  networkError?: boolean;
-};
+import { fixturePath, type Stored } from "./contracts.ts";
 
 const NOT_SET = "OTENKI_FIXTURE_DIR is not set";
 
@@ -46,15 +39,6 @@ const mode = (): "record" | "replay" => {
         `OTENKI_FIXTURE_MODE is invalid: '${process.env.OTENKI_FIXTURE_MODE}'`,
       );
   }
-};
-
-/** The URL string is the canonical key; the hash gives the file a stable name. */
-const apiPath = (url: URL): string => {
-  const hash = new Bun.CryptoHasher("sha256")
-    .update(url.href)
-    .digest("hex")
-    .slice(0, 16);
-  return `${fixtureDir()}/api/${hash}.json`;
 };
 
 const store = async (path: string, stored: Stored): Promise<void> => {
@@ -97,7 +81,7 @@ if (
     init?: RequestInit,
   ): Promise<Response> => {
     const url = input instanceof URL ? input : new URL(String(input));
-    const path = apiPath(url);
+    const path = fixturePath(fixtureDir(), url.href);
     const run = mode();
 
     if (await Bun.file(path).exists()) {

@@ -1,16 +1,30 @@
 #!/usr/bin/env bun
 /**
- * Runs every case in `cases.jsonl` and records what the current CLI does.
+ * Runs every case in `cases.jsonl` and either stores or checks what the CLI did.
  *
- *   bun rust/fixtures/capture/capture.ts            # capture goldens (replay)
- *   bun rust/fixtures/capture/capture.ts --record   # same, networked where recordings are missing
- *   bun rust/fixtures/capture/capture.ts --verify   # compare against the goldens, no writes
+ *   bun rust/fixtures/capture/capture.ts           # capture goldens (replay)
+ *   bun rust/fixtures/capture/capture.ts --record  # same, networked where recordings are missing
+ *   bun rust/fixtures/capture/capture.ts --verify  # compare against the goldens, no writes
+ *   bun rust/fixtures/capture/capture.ts --clean   # wipe goldens/ + work/, keep the recordings
  *
  * Cases are hermetic: each one gets its own `work/<id>` directory for
  * `XDG_STATE_HOME` / `XDG_CONFIG_HOME`, a frozen `Date.now` (`OTENKI_NOW`) and
  * a fetch router (`rust/fixtures/capture/preload.ts`). The goldens under
  * `goldens/` are the contract the Rust port is measured against.
+ *
+ * The goldens are derived data: a plain capture run rebuilds them from the
+ * recordings in `api/` byte for byte, so --clean stays safe to run. `api/` is
+ * the opposite — real responses recorded once, frozen in git. A whole new
+ * network snapshot is therefore a manual step: delete `api/` yourself, then
+ * re-record.
  */
+
+import {
+  fixturePath,
+  fixtureUrl,
+  type Case,
+  type Stored,
+} from "./contracts.ts";
 
 // The freeze point the whole battery shares. Everything concrete — hourly
 // windows, cache TTLs, savedAt values — derives from this absolute instant.
@@ -23,153 +37,14 @@ const fixturesRoot = `${repoRoot}rust/fixtures`;
 const captureDir = `${fixturesRoot}/capture`;
 const workRoot = `${fixturesRoot}/work`;
 const goldensRoot = `${fixturesRoot}/goldens`;
-const apiRoot = `${fixturesRoot}/api`;
 
-type Units = "metric" | "imperial";
-
-type FixtureKind =
-  | { kind: "geocode"; name: string; language: string; count?: number }
-  | {
-      kind: "forecast-current";
-      latitude: number;
-      longitude: number;
-      units?: Units;
-    }
-  | {
-      kind: "forecast-daily";
-      latitude: number;
-      longitude: number;
-      units?: Units;
-      days: number;
-    }
-  | {
-      kind: "forecast-hourly";
-      latitude: number;
-      longitude: number;
-      units?: Units;
-    };
-
-type FixtureSpec = FixtureKind & {
-  status?: number;
-  body?: unknown;
-  networkError?: boolean;
-};
-
-type Case = {
-  id: string;
-  group: string;
-  argv: string[];
-  env?: Record<string, string>;
-  /** Materialized for the run: the config file and the pre-seeded cache. */
-  state?: {
-    config?: object;
-    configRaw?: string;
-    /** Written to places.json; `savedAtDaysAgo` keys the TTL clock. */
-    cache?: Record<string, { savedAtDaysAgo: number; results: unknown[] }>;
-    cacheRaw?: string;
-    /** Snapshot places.json after the run into the golden. */
-    snapshot?: boolean;
-  };
-  /** Hand written responses, written to `api/` before the run. */
-  fixtures?: FixtureSpec[];
-};
-
-type Stored = {
-  url: string;
-  status: number;
-  body: string;
-  contentType?: string;
-  networkError?: boolean;
-};
-
-// ── URL builders ────────────────────────────────────────────────────────────
-// The `href` must match what the app builds, parameter for parameter: the
-// preload keys both sides on the URL string, so a drift breaks a case the
-// moment the app changes its queries instead of quietly comparing stale
-// behaviour.
-
-const geocodeUrl = (
-  name: string,
-  language: string,
-  count: number = 10,
-): string => {
-  const url = new URL("https://geocoding-api.open-meteo.com/v1/search");
-  url.searchParams.set("name", name);
-  url.searchParams.set("count", String(count));
-  url.searchParams.set("language", language);
-  url.searchParams.set("format", "json");
-  return url.href;
-};
-
-const CURRENT_PARAMS = [
-  "temperature_2m",
-  "apparent_temperature",
-  "weather_code",
-  "wind_speed_10m",
-  "relative_humidity_2m",
-  "precipitation",
-].join(",");
-
-const DAILY_PARAMS = [
-  "weather_code",
-  "temperature_2m_max",
-  "temperature_2m_min",
-  "precipitation_sum",
-  "precipitation_probability_max",
-  "wind_speed_10m_max",
-].join(",");
-
-const HOURLY_PARAMS = [
-  "temperature_2m",
-  "weather_code",
-  "precipitation_probability",
-  "wind_speed_10m",
-  "precipitation",
-].join(",");
-
-const forecastUrl = (
-  latitude: number,
-  longitude: number,
-  units: Units = "metric",
-): URL => {
-  const url = new URL("https://api.open-meteo.com/v1/forecast");
-  url.searchParams.set("latitude", String(latitude));
-  url.searchParams.set("longitude", String(longitude));
-  url.searchParams.set("timezone", "auto");
-  if (units === "imperial") {
-    url.searchParams.set("temperature_unit", "fahrenheit");
-    url.searchParams.set("wind_speed_unit", "mph");
-    url.searchParams.set("precipitation_unit", "inch");
-  }
-  return url;
-};
-
-const fixtureHref = (spec: FixtureKind): string => {
-  if (spec.kind === "geocode") {
-    return geocodeUrl(spec.name, spec.language, spec.count);
-  }
-
-  const url = forecastUrl(spec.latitude, spec.longitude, spec.units);
-  if (spec.kind === "forecast-current") {
-    url.searchParams.set("current", CURRENT_PARAMS);
-  }
-  if (spec.kind === "forecast-daily") {
-    url.searchParams.set("daily", DAILY_PARAMS);
-    url.searchParams.set("forecast_days", String(spec.days));
-  }
-  if (spec.kind === "forecast-hourly") {
-    url.searchParams.set("hourly", HOURLY_PARAMS);
-    url.searchParams.set("forecast_days", "2");
-    url.searchParams.set("timeformat", "unixtime");
-  }
-  return url.href;
-};
+// ── Hand written responses ──────────────────────────────────────────────────
 
 const writeFixtures = async (cases: Case[]): Promise<void> => {
   for (const item of cases) {
     for (const spec of item.fixtures ?? []) {
       const stored: Stored = {
-        url: fixtureHref(spec),
+        url: fixtureUrl(spec),
         status: spec.status ?? 200,
         body:
           typeof spec.body === "string"
@@ -178,7 +53,7 @@ const writeFixtures = async (cases: Case[]): Promise<void> => {
         contentType: "application/json",
         networkError: spec.networkError,
       };
-      const file = `${apiRoot}/${new Bun.CryptoHasher("sha256").update(stored.url).digest("hex").slice(0, 16)}.json`;
+      const file = fixturePath(fixturesRoot, stored.url);
       await Bun.write(file, `${JSON.stringify(stored, null, 2)}\n`);
     }
   }
@@ -264,23 +139,15 @@ const normalizeState = (value: unknown): unknown => {
 const normalize = (text: string, root: string): string =>
   text.replaceAll(repoRoot, "{REPO}").replaceAll(root, "{WORK}");
 
-const runCase = async (
-  item: Case,
-  mode: "record" | "replay",
-): Promise<{
+type Run = {
   out: string;
   err: string;
   exit: number;
   state: string | null;
-}> => {
+};
+
+const runCase = async (item: Case, mode: "record" | "replay"): Promise<Run> => {
   const root = await prepareState(item);
-  const env: Record<string, string> = {};
-  for (const [key, value] of Object.entries({
-    ...baseEnv(mode, root),
-    ...(item.env ?? {}),
-  })) {
-    env[key] = value;
-  }
 
   const child = Bun.spawn(
     [
@@ -290,7 +157,12 @@ const runCase = async (
       `${repoRoot}apps/otenki/src/index.ts`,
       ...item.argv,
     ],
-    { cwd: repoRoot, env, stdout: "pipe", stderr: "pipe" },
+    {
+      cwd: repoRoot,
+      env: baseEnv(mode, root),
+      stdout: "pipe",
+      stderr: "pipe",
+    },
   );
   const [out, err, exit] = await Promise.all([
     new Response(child.stdout).text(),
@@ -331,10 +203,16 @@ const golden = (item: Case) => {
   };
 };
 
+/** The goldens plus the work dirs are regenerable; wipe them wholesale. */
+const clean = (): Promise<void> =>
+  Bun.$`rm -rf ${goldensRoot} ${workRoot}`.quiet().then(() => undefined);
+
+type Outcome = { ok: boolean; text: string };
+
 const capture = async (
   item: Case,
   mode: "record" | "replay",
-): Promise<string> => {
+): Promise<Outcome> => {
   const run = await runCase(item, mode);
   const paths = golden(item);
   await Bun.$`mkdir -p ${paths.dir}`.quiet();
@@ -343,7 +221,10 @@ const capture = async (
   await Bun.write(paths.exit, `${run.exit}\n`);
   if (run.state === null) await Bun.$`rm -f ${paths.state}`.quiet();
   else await Bun.write(paths.state, run.state);
-  return `${item.id}: exit ${run.exit}, out ${run.out.length}B, err ${run.err.length}B`;
+  return {
+    ok: true,
+    text: `${item.id}: exit ${run.exit}, out ${run.out.length}B, err ${run.err.length}B`,
+  };
 };
 
 const diffText = (name: string, want: string, got: string): string | null => {
@@ -361,7 +242,7 @@ const diffText = (name: string, want: string, got: string): string | null => {
   return lines.join("\n");
 };
 
-const verify = async (item: Case): Promise<string> => {
+const verify = async (item: Case): Promise<Outcome> => {
   const run = await runCase(item, "replay");
   const paths = golden(item);
   const problems = [
@@ -389,27 +270,46 @@ const verify = async (item: Case): Promise<string> => {
 
   const flat = problems.filter((problem) => problem !== null);
   return flat.length === 0
-    ? `${item.id}: ok`
-    : `${item.id}: FAIL\n${flat.join("\n")}`;
+    ? { ok: true, text: `${item.id}: ok` }
+    : { ok: false, text: `${item.id}: FAIL\n${flat.join("\n")}` };
 };
 
 // ── Main ────────────────────────────────────────────────────────────────────
 
 const main = async (): Promise<void> => {
   const wantVerify = process.argv.includes("--verify");
-  const record = process.argv.includes("--record");
-  const items = await loadCases();
+  const wantRecord = process.argv.includes("--record");
+  const wantClean = process.argv.includes("--clean");
 
-  if (record) await writeFixtures(items);
+  if (wantClean && wantVerify) {
+    console.error(
+      "--clean deletes the goldens --verify would compare with; refresh them with --clean --record or a plain capture run instead",
+    );
+    process.exit(1);
+  }
+
+  if (wantClean) {
+    await clean();
+    console.log("cleaned goldens/ and work/ (api/ recordings kept)");
+    if (!wantRecord) {
+      console.log(
+        "a plain capture run re-derives the goldens from the recordings",
+      );
+      return;
+    }
+  }
+
+  const cases = await loadCases();
+  if (wantRecord) await writeFixtures(cases);
 
   let failed = 0;
-  for (const item of items) {
+  for (const item of cases) {
     try {
-      const result = wantVerify
+      const outcome = wantVerify
         ? await verify(item)
-        : await capture(item, record ? "record" : "replay");
-      if (result.includes("FAIL")) failed++;
-      console.log(result);
+        : await capture(item, wantRecord ? "record" : "replay");
+      if (!outcome.ok) failed++;
+      console.log(outcome.text);
     } catch (error: unknown) {
       failed++;
       console.error(
@@ -419,7 +319,7 @@ const main = async (): Promise<void> => {
   }
 
   console.log(
-    `${items.length} cases ${wantVerify ? "verified" : "captured"}, ${failed} failed`,
+    `${cases.length} cases ${wantVerify ? "verified" : "captured"}, ${failed} failed`,
   );
   if (failed > 0) process.exit(1);
 };
