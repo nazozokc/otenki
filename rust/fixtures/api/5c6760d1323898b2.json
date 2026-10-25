@@ -1,7 +1,0 @@
-{
-  "url": "https://api.open-meteo.com/v1/forecast?latitude=44.1&longitude=141.1&timezone=auto&current=temperature_2m%2Capparent_temperature%2Cweather_code%2Cwind_speed_10m%2Crelative_humidity_2m%2Cprecipitation",
-  "status": 200,
-  "body": "{}",
-  "contentType": "application/json",
-  "networkError": true
-}

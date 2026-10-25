@@ -1,6 +1,0 @@
-{
-  "url": "https://api.open-meteo.com/v1/forecast?latitude=41.77583&longitude=140.73666&timezone=auto&daily=weather_code%2Ctemperature_2m_max%2Ctemperature_2m_min%2Cprecipitation_sum%2Cprecipitation_probability_max%2Cwind_speed_10m_max&forecast_days=7",
-  "status": 200,
-  "body": "{\"latitude\":41.8,\"longitude\":140.75,\"generationtime_ms\":10.957121849060059,\"utc_offset_seconds\":32400,\"timezone\":\"Asia/Tokyo\",\"timezone_abbreviation\":\"GMT+9\",\"elevation\":5.0,\"daily_units\":{\"time\":\"iso8601\",\"weather_code\":\"wmo code\",\"temperature_2m_max\":\"°C\",\"temperature_2m_min\":\"°C\",\"precipitation_sum\":\"mm\",\"precipitation_probability_max\":\"%\",\"wind_speed_10m_max\":\"km/h\"},\"daily\":{\"time\":[\"2026-10-25\",\"2026-10-26\",\"2026-10-27\",\"2026-10-28\",\"2026-10-29\",\"2026-10-30\",\"2026-10-31\"],\"weather_code\":[3,3,63,61,81,81,81],\"temperature_2m_max\":[18.2,13.0,13.0,7.9,11.5,15.1,14.8],\"temperature_2m_min\":[10.7,9.3,7.9,2.4,2.4,9.7,5.1],\"precipitation_sum\":[0.00,0.00,4.40,6.80,14.40,32.90,10.90],\"precipitation_probability_max\":[93,2,96,100,78,91,90],\"wind_speed_10m_max\":[17.9,15.1,23.1,37.7,21.5,14.4,24.8]}}",
-  "contentType": "application/json; charset=utf-8"
-}

@@ -1,6 +1,0 @@
-{
-  "url": "https://api.open-meteo.com/v1/forecast?latitude=0&longitude=0&timezone=auto&current=temperature_2m%2Capparent_temperature%2Cweather_code%2Cwind_speed_10m%2Crelative_humidity_2m%2Cprecipitation",
-  "status": 200,
-  "body": "{\"utc_offset_seconds\":0,\"timezone\":\"Africa/Abidjan\",\"daily\":{\"time\":[]}}",
-  "contentType": "application/json"
-}

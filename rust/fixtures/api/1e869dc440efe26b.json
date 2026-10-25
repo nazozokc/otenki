@@ -1,6 +1,0 @@
-{
-  "url": "https://geocoding-api.open-meteo.com/v1/search?name=geocode-http404&count=10&language=en&format=json",
-  "status": 404,
-  "body": "{}",
-  "contentType": "application/json"
-}

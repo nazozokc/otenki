@@ -1,6 +1,0 @@
-{
-  "url": "https://api.open-meteo.com/v1/forecast?latitude=39.09973&longitude=-94.57857&timezone=auto&current=temperature_2m%2Capparent_temperature%2Cweather_code%2Cwind_speed_10m%2Crelative_humidity_2m%2Cprecipitation",
-  "status": 200,
-  "body": "{\"latitude\":39.108913,\"longitude\":-94.58583,\"generationtime_ms\":0.3203153610229492,\"utc_offset_seconds\":-18000,\"timezone\":\"America/Chicago\",\"timezone_abbreviation\":\"GMT-5\",\"elevation\":280.0,\"current_units\":{\"time\":\"iso8601\",\"interval\":\"seconds\",\"temperature_2m\":\"°C\",\"apparent_temperature\":\"°C\",\"weather_code\":\"wmo code\",\"wind_speed_10m\":\"km/h\",\"relative_humidity_2m\":\"%\",\"precipitation\":\"mm\"},\"current\":{\"time\":\"2026-10-25T07:15\",\"interval\":900,\"temperature_2m\":11.7,\"apparent_temperature\":10.9,\"weather_code\":2,\"wind_speed_10m\":0.8,\"relative_humidity_2m\":75,\"precipitation\":0.00}}",
-  "contentType": "application/json; charset=utf-8"
-}

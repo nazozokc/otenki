@@ -1,6 +1,0 @@
-{
-  "url": "https://geocoding-api.open-meteo.com/v1/search?name=Kansas+City+Missouri&count=10&language=en&format=json",
-  "status": 200,
-  "body": "{\"generationtime_ms\":0.16450882}",
-  "contentType": "application/json; charset=utf-8"
-}

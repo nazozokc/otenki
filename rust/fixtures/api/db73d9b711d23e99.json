@@ -1,6 +1,0 @@
-{
-  "url": "https://api.open-meteo.com/v1/forecast?latitude=51.50853&longitude=-0.12574&timezone=auto&daily=weather_code%2Ctemperature_2m_max%2Ctemperature_2m_min%2Cprecipitation_sum%2Cprecipitation_probability_max%2Cwind_speed_10m_max&forecast_days=7",
-  "status": 200,
-  "body": "{\"latitude\":51.51147,\"longitude\":-0.13078308,\"generationtime_ms\":0.4584789276123047,\"utc_offset_seconds\":0,\"timezone\":\"Europe/London\",\"timezone_abbreviation\":\"GMT\",\"elevation\":23.0,\"daily_units\":{\"time\":\"iso8601\",\"weather_code\":\"wmo code\",\"temperature_2m_max\":\"°C\",\"temperature_2m_min\":\"°C\",\"precipitation_sum\":\"mm\",\"precipitation_probability_max\":\"%\",\"wind_speed_10m_max\":\"km/h\"},\"daily\":{\"time\":[\"2026-10-25\",\"2026-10-26\",\"2026-10-27\",\"2026-10-28\",\"2026-10-29\",\"2026-10-30\",\"2026-10-31\"],\"weather_code\":[51,61,53,3,3,3,45],\"temperature_2m_max\":[13.4,16.1,16.4,15.7,15.6,14.7,10.5],\"temperature_2m_min\":[9.2,9.2,10.3,9.0,9.6,8.6,6.8],\"precipitation_sum\":[0.40,4.30,3.50,0.00,0.00,0.00,0.00],\"precipitation_probability_max\":[100,100,84,4,0,13,12],\"wind_speed_10m_max\":[31.0,20.9,27.0,16.2,11.2,6.8,3.6]}}",
-  "contentType": "application/json; charset=utf-8"
-}

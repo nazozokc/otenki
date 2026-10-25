@@ -1,6 +1,0 @@
-{
-  "url": "https://api.open-meteo.com/v1/forecast?latitude=35.6895&longitude=139.69171&timezone=auto&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&current=temperature_2m%2Capparent_temperature%2Cweather_code%2Cwind_speed_10m%2Crelative_humidity_2m%2Cprecipitation",
-  "status": 200,
-  "body": "{\"latitude\":35.7,\"longitude\":139.6875,\"generationtime_ms\":0.14770030975341797,\"utc_offset_seconds\":32400,\"timezone\":\"Asia/Tokyo\",\"timezone_abbreviation\":\"GMT+9\",\"elevation\":40.0,\"current_units\":{\"time\":\"iso8601\",\"interval\":\"seconds\",\"temperature_2m\":\"°F\",\"apparent_temperature\":\"°F\",\"weather_code\":\"wmo code\",\"wind_speed_10m\":\"mp/h\",\"relative_humidity_2m\":\"%\",\"precipitation\":\"inch\"},\"current\":{\"time\":\"2026-10-25T21:15\",\"interval\":900,\"temperature_2m\":65.1,\"apparent_temperature\":69.1,\"weather_code\":2,\"wind_speed_10m\":1.6,\"relative_humidity_2m\":93,\"precipitation\":0.000}}",
-  "contentType": "application/json; charset=utf-8"
-}

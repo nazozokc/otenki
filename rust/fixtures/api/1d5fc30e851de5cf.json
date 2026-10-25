@@ -1,6 +1,0 @@
-{
-  "url": "https://api.open-meteo.com/v1/forecast?latitude=10.5&longitude=52&timezone=auto&hourly=temperature_2m%2Cweather_code%2Cprecipitation_probability%2Cwind_speed_10m%2Cprecipitation&forecast_days=2&timeformat=unixtime",
-  "status": 200,
-  "body": "{\"latitude\":10.5,\"longitude\":52,\"utc_offset_seconds\":3600,\"timezone\":\"Europe/Berlin\",\"hourly\":{\"time\":[1792886400,1792890000,1792893600,1792897200,1792900800,1792904400,1792908000,1792911600,1792915200,1792918800,1792922400],\"temperature_2m\":[7.5,7.9,8.3,null,9.1,9.5,9.9,10.3,10.7,11.1,null],\"weather_code\":[0,2,3,61,80,71,95,0,2,3,61],\"precipitation_probability\":[0,15,30,45,60,75,0,15,30,45,60],\"wind_speed_10m\":[2,3.3,4.6,5.9,7.2,8.5,9.8,11.1,12.4,2,3.3],\"precipitation\":[0,0,0.1,1.2,4.1,0,0.8,0,0,0.1,1.2]}}",
-  "contentType": "application/json"
-}

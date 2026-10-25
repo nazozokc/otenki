@@ -1,6 +1,0 @@
-{
-  "url": "https://api.open-meteo.com/v1/forecast?latitude=35.6895&longitude=139.6917&timezone=auto&current=temperature_2m%2Capparent_temperature%2Cweather_code%2Cwind_speed_10m%2Crelative_humidity_2m%2Cprecipitation",
-  "status": 200,
-  "body": "{\"current\":{\"time\":\"2026-10-25T22:30\",\"temperature_2m\":18.3,\"apparent_temperature\":16.9,\"weather_code\":3,\"wind_speed_10m\":15.2,\"relative_humidity_2m\":63,\"precipitation\":2.1},\"utc_offset_seconds\":32400,\"timezone\":\"Asia/Tokyo\"}",
-  "contentType": "application/json"
-}
