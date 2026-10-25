@@ -1,0 +1,12 @@
+Usage: otenki 3h <location...> [options]
+
+  3-hourly forecast over the next 24 hours
+
+Arguments:
+  location  place name or latitude longitude pair
+
+Options:
+  --json         print raw JSON
+  -V, --version  print the version
+  -h, --help     show this help
+  --no-config    ignore the config file

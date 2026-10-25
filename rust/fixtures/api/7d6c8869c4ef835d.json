@@ -1,0 +1,6 @@
+{
+  "url": "https://api.open-meteo.com/v1/forecast?latitude=33&longitude=130.2&timezone=auto&current=temperature_2m%2Capparent_temperature%2Cweather_code%2Cwind_speed_10m%2Crelative_humidity_2m%2Cprecipitation",
+  "status": 200,
+  "body": "{\"reason\":\"Latitude 33.000000 is out of range\"}",
+  "contentType": "application/json"
+}

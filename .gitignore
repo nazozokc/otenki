@@ -114,3 +114,9 @@ dist
 
 # cache path from an unset HOME (stateDir now falls back to os.homedir())
 undefined/
+
+# Rust 移行の golden capture が書く作業ディレクトリ
+rust/fixtures/work/
+
+# code-ignore は .out 拡張子を握っているので、golden の出だけ吸い上げ直す
+!rust/fixtures/goldens/**/*.out
