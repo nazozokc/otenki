@@ -60,7 +60,7 @@ type Case = {
   group: string;
   argv: string[];
   env?: Record<string, string>;
-  /** Materialised for the run: the config file and the pre-seeded cache. */
+  /** Materialized for the run: the config file and the pre-seeded cache. */
   state?: {
     config?: object;
     configRaw?: string;
