@@ -7,6 +7,9 @@ extend-exclude = [
   "**/node_modules/**",
   "**/dist/**",
   "**/.vitepress/cache/**",
+  # recorded API responses and golden CLI output, both machine written
+  "**/rust/fixtures/api/**",
+  "**/rust/fixtures/goldens/**",
   # lock and dependency lists are package names, not words
   "**/bun.lock",
   "**/bun.nix",

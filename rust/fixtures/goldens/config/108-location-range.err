@@ -1,0 +1,1 @@
+✗ config: {REPO}rust/fixtures/work/108-location-range/config/otenki/config.json: location out of range: 91, 10 (latitude -90..90, longitude -180..180)

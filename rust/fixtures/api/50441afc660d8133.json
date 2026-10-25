@@ -1,0 +1,6 @@
+{
+  "url": "https://geocoding-api.open-meteo.com/v1/search?name=%E7%A5%9E%E5%A5%88%E5%B7%9D%E7%94%BA&count=10&language=ja&format=json",
+  "status": 200,
+  "body": "{\"generationtime_ms\":0.17023087}",
+  "contentType": "application/json; charset=utf-8"
+}

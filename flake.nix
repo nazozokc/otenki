@@ -306,7 +306,21 @@
           treefmt.config = {
             projectRootFile = "flake.nix";
             programs.nixfmt.enable = true;
-            programs.prettier.enable = true;
+            programs.prettier = {
+              enable = true;
+              excludes = [
+                # Rust 移行の golden fixtures。record が書くので整形しない
+                # (不正 JSON を故意に含む config ケースもある)。
+                # globset は `**/` が 0 要素にマッチしないため、先頭と
+                # 中間の両方の形を並べる
+                "rust/fixtures/api/**"
+                "rust/fixtures/goldens/**"
+                "rust/fixtures/work/**"
+                "**/rust/fixtures/api/**"
+                "**/rust/fixtures/goldens/**"
+                "**/rust/fixtures/work/**"
+              ];
+            };
             settings.global.excludes = [
               # bun.lock は trailing comma を含む JSON なので prettier 不可
               "bun.lock"
