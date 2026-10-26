@@ -76,18 +76,14 @@ pub const FORECAST_ENDPOINT: &str = "https://api.open-meteo.com/v1/forecast";
 pub const GEOCODING_ENDPOINT: &str = "https://geocoding-api.open-meteo.com/v1/search";
 
 /// Units knob shared by every forecast call; imperial flips three unit params.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Units {
-    Metric,
-    Imperial,
-}
+/// Lives in `config` because that is where the value is validated; re-exported
+/// here since the URL builders are its main consumer.
+pub use crate::config::Units;
 
-impl From<&str> for Units {
-    fn from(text: &str) -> Self {
-        match text {
-            "imperial" => Units::Imperial,
-            _ => Units::Metric,
-        }
+impl Units {
+    /// Whether `temperature_unit` &co join the URL.
+    pub fn is_imperial(self) -> bool {
+        matches!(self, Units::Imperial)
     }
 }
 
@@ -98,13 +94,6 @@ pub fn geocode_url(name: &str, count: i64, language: &str) -> Url {
         .set("count", crate::json::js_number_string(count as f64))
         .set("language", language)
         .set("format", "json")
-}
-
-impl Units {
-    /// Whether `temperature_unit` &co join the URL.
-    pub fn is_imperial(self) -> bool {
-        matches!(self, Units::Imperial)
-    }
 }
 
 fn forecast_base(latitude: f64, longitude: f64, units: Units) -> Url {

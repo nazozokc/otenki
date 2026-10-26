@@ -212,7 +212,7 @@ fn parse_tzif(bytes: &[u8]) -> Option<TzData> {
 /// Days since the epoch → (year, month 1-12, day 1-31). Howard Hinnant's
 /// `civil_from_days`, which is what the JS zone math amounts to after the
 /// offset shift.
-fn civil_from_days(days: i64) -> (i64, u32, u32) {
+pub(crate) fn civil_from_days(days: i64) -> (i64, u32, u32) {
     let z = days + 719_468;
     let era = z.div_euclid(146_097);
     let doe = z - era * 146_097; // [0, 146096]
@@ -223,6 +223,18 @@ fn civil_from_days(days: i64) -> (i64, u32, u32) {
     let month = if mp < 10 { mp + 3 } else { mp - 9 }; // [1, 12]
     let year = yoe + era * 400 + if month <= 2 { 1 } else { 0 };
     (year, month as u32, day as u32)
+}
+
+/// Hinnant's `days_from_civil`, the inverse of [`civil_from_days`]: a calendar
+/// date to Unix epoch days. `format_day` needs it to find a `YYYY-MM-DD`'s
+/// weekday without constructing a full date object.
+pub fn days_from_civil(year: i64, month: i64, day: i64) -> i64 {
+    let y = year - if month <= 2 { 1 } else { 0 };
+    let era = y.div_euclid(400);
+    let yoe = y - era * 400; // [0, 399]
+    let doy = (153 * (if month > 2 { month - 3 } else { month + 9 }) + 2) / 5 + day - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    era * 146_097 + doe - 719_468
 }
 
 #[cfg(test)]
@@ -287,10 +299,27 @@ mod tests {
         // 2000-01-01 is day 10957 (7 leap years since 1970), so the leap day
         // is 11016 and March 1 follows it.
         assert_eq!(civil_from_days(11_016), (2000, 2, 29));
-        assert_eq!(civil_from_days(11_017), (2000, 3, 1));
-        // 1900-01-01 is day -25567 (17 leap days in between), not a leap year
-        // itself (÷100), so March 1 is 59 days into the year.
+        assert_eq!(civil_from_days(11_017), (2000, 3, 1)); // 1900-01-01 is day -25567 (17 leap days in between), not a leap year
+                                                           // itself (÷100), so March 1 is 59 days into the year.
         assert_eq!(civil_from_days(-25_508), (1900, 3, 1));
         assert_eq!(civil_from_days(-25_509), (1900, 2, 28));
+    }
+
+    #[test]
+    fn days_from_civil_round_trips_civil_from_days() {
+        for (days, date) in [
+            (0i64, (1970i64, 1u32, 1u32)),
+            (19_174i64, (2022i64, 7u32, 1u32)),
+            (-1, (1969, 12, 31)),
+        ] {
+            assert_eq!(
+                days_from_civil(date.0, i64::from(date.1), i64::from(date.2)),
+                days
+            );
+            assert_eq!(civil_from_days(days), date);
+        }
+        // 2026-10-05 is day 20731; a Monday, as `format.ts`'s table says.
+        assert_eq!(days_from_civil(2026, 10, 5), 20_731);
+        assert_eq!((20_731i64 + 4).rem_euclid(7), 1);
     }
 }

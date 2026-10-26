@@ -5,13 +5,21 @@
 //!
 //! Temporary smoke main while the port lands module by module.
 
+mod config;
+mod format;
+mod hourly_time;
+mod http;
 mod json;
 mod now;
 mod sanitize;
 mod sha256;
+mod style;
+mod table;
 mod text;
 mod tzif;
 mod url;
+mod weather;
+mod width;
 
 fn main() {
     let url = "https://api.open-meteo.com/v1/forecast?latitude=35.6895";
