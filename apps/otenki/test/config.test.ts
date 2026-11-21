@@ -8,7 +8,7 @@ import {
   loadConfig,
   stripNoConfig,
 } from "../src/config.ts";
-import { setColorMode, styled } from "../src/style.ts";
+import { setColorMode, setTheme, styled } from "../src/style.ts";
 import { withColor } from "./support.ts";
 
 let dir: string;
@@ -27,6 +27,7 @@ afterEach(() => {
   // The override is module state: leaking it would repaint every colour
   // assertion in the files that run after this one.
   setColorMode(undefined);
+  setTheme(undefined);
 });
 
 describe("loadConfig", () => {
@@ -41,6 +42,7 @@ describe("loadConfig", () => {
         location: "函館",
         command: "weekly",
         color: "always",
+        theme: "light",
         units: "imperial",
         days: 5,
       }),
@@ -50,6 +52,7 @@ describe("loadConfig", () => {
       location: "函館",
       command: "weekly",
       color: "always",
+      theme: "light",
       units: "imperial",
       days: 5,
     });
@@ -88,6 +91,11 @@ describe("loadConfig", () => {
     writeFileSync(file, JSON.stringify({ color: "rainbow" }));
     await expect(loadConfig(file)).rejects.toThrow(
       "color must be auto, always or never",
+    );
+
+    writeFileSync(file, JSON.stringify({ theme: "rainbow" }));
+    await expect(loadConfig(file)).rejects.toThrow(
+      "theme must be auto, dark or light",
     );
 
     writeFileSync(file, JSON.stringify({ units: "kelvin" }));

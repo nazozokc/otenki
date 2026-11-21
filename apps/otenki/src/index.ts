@@ -8,7 +8,7 @@ import { fortnight, tomorrow, weekly } from "./daily.ts";
 import { every } from "./hourly.ts";
 import { locate } from "./locate.ts";
 import { sanitizeText } from "./sanitize.ts";
-import { error as styleError, setColorMode } from "./style.ts";
+import { error as styleError, setColorMode, setTheme } from "./style.ts";
 import { today } from "./today.ts";
 import { version } from "./version.ts";
 
@@ -152,5 +152,6 @@ if (config === null) {
   // Before dispatch: every styled byte the run prints — including dispatch's
   // own errors — obeys the configured colour policy.
   setColorMode(config.color);
+  setTheme(config.theme);
   process.exitCode = await dispatch(commands, argv, await version(), config);
 }

@@ -16,6 +16,7 @@
   "location": "函館",
   "command": "today",
   "color": "auto",
+  "theme": "auto",
   "units": "metric",
   "days": 7
 }
@@ -28,6 +29,7 @@
 | `location` | 文字列 または `[緯度, 経度]` | 地点の引数を省略したときの既定の地点      |
 | `command`  | 文字列                       | `otenki` だけを実行したときに走るコマンド |
 | `color`    | `auto` / `always` / `never`  | 色付けの方針。既定は `auto`               |
+| `theme`    | `auto` / `dark` / `light`    | 端末の背景。既定は `auto`                 |
 | `units`    | `metric` / `imperial`        | 単位系。既定は `metric`（°C・km/h・mm）   |
 | `days`     | 1〜16 の整数                 | `weekly` `fortnight` の予報日数           |
 
@@ -73,6 +75,8 @@ otenki today 東京        # 明示した引数が優先
 ### 色
 
 `color: "always"` と `never` は TTY の判定と `NO_COLOR` より優先します。`auto` と未設定はこれまで通り、TTY と `NO_COLOR` で決めます。
+
+`theme` は色の明暗を決めます。暗い背景には明るい ANSI 色（ bright ）、明るい背景には標準の ANSI 色を使います。同じ色番号でも片方の背景で読めないことがあるためです。`auto` は端末が `COLORFGBG` を出していればそれを読み、無ければ暗い背景として扱います。端末が背景を教えてくれないときは `"dark"` か `"light"` を明示してください。
 
 ### 予報日数
 

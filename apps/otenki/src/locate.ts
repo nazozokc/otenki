@@ -90,7 +90,7 @@ export const locate = async (
 
   console.log(bold(placeLabel(chosen)));
   console.log(temperature(formatCoordinate(chosen.latitude, chosen.longitude)));
-  console.log(dim(detail(chosen)));
+  console.log(detail(chosen));
 
   if (options.all === true && places.length > 1) {
     console.log("");

@@ -1,37 +1,52 @@
 /* ------------------------------------------------------------------
-   配色は CLI 側 (apps/otenki/src/style.ts) から持ってきた。
-   brand  = temperature のオレンジ #ff9e64
-   accent = heading のブルー     #7aa2f7
+   可読性を基準にした配色。
+
+   Web 側の調査で「最も見やすい」とされているのは、背景と本文のコントラストを
+   WCAG AAA (7:1) まで確保し、色相は青とオレンジを軸にする構成。
+   - W3C WCAG 2.2: 本文 4.5:1 (AA) / 7:1 (AAA)、図形 3:1
+   - Bloomberg UX (2021): 高コントラスト配色は正確さ・自信・好みで上回った
+   - Okabe & Ito の CUD: 赤緑の組合せを避け、色だけに意味を預けない
+   下の色はすべて対応する背景に対して 7:1 以上 (text-3 は AA)。
+   CLI は ANSI 16 色を使うので色番号は共有しないが、青/オレンジの軸は同じ。
    ------------------------------------------------------------------ */
 
 :root {
-  --vp-c-brand-1: #c2410c;
-  --vp-c-brand-2: #9a3412;
-  --vp-c-brand-3: #7c2d12;
-  --vp-c-brand-soft: rgb(194 65 12 / 14%);
+  --vp-c-bg: #ffffff;
+  --vp-c-bg-alt: #f6f8fa;
+  --vp-c-bg-soft: #f0f3f7;
+  --vp-c-bg-elv: #ffffff;
 
-  --vp-c-tip-1: #1d4ed8;
-  --vp-c-tip-2: #1e40af;
-  --vp-c-tip-3: #1e3a8a;
-  --vp-c-tip-soft: rgb(29 78 216 / 14%);
+  --vp-c-text-1: #1f2937;
+  --vp-c-text-2: #374151;
+  --vp-c-text-3: #59636e;
 
-  --vp-c-warning-1: #b45309;
-  --vp-c-warning-2: #92400e;
-  --vp-c-warning-3: #78350f;
-  --vp-c-warning-soft: rgb(180 83 9 / 14%);
+  --vp-c-brand-1: #8a3a00;
+  --vp-c-brand-2: #763100;
+  --vp-c-brand-3: #622900;
+  --vp-c-brand-soft: rgb(138 58 0 / 14%);
 
-  --vp-c-danger-1: #b91c1c;
-  --vp-c-danger-2: #991b1b;
-  --vp-c-danger-3: #7f1d1d;
-  --vp-c-danger-soft: rgb(185 28 28 / 14%);
+  --vp-c-tip-1: #0b4f9e;
+  --vp-c-tip-2: #094283;
+  --vp-c-tip-3: #073568;
+  --vp-c-tip-soft: rgb(11 79 158 / 14%);
 
-  --vp-c-indigo-1: #4f46e5;
-  --vp-c-indigo-2: #4338ca;
-  --vp-c-indigo-3: #3730a3;
-  --vp-c-indigo-soft: rgb(79 70 229 / 14%);
+  --vp-c-warning-1: #7c3f0a;
+  --vp-c-warning-2: #683507;
+  --vp-c-warning-3: #542b05;
+  --vp-c-warning-soft: rgb(124 63 10 / 14%);
+
+  --vp-c-danger-1: #991b1b;
+  --vp-c-danger-2: #831616;
+  --vp-c-danger-3: #6d1111;
+  --vp-c-danger-soft: rgb(153 27 27 / 14%);
+
+  --vp-c-indigo-1: #4338ca;
+  --vp-c-indigo-2: #372db0;
+  --vp-c-indigo-3: #2d2492;
+  --vp-c-indigo-soft: rgb(67 56 202 / 14%);
 
   --vp-home-hero-name-color: transparent;
-  --vp-home-hero-name-background: linear-gradient(120deg, #ff9e64, #f7768e);
+  --vp-home-hero-name-background: linear-gradient(120deg, #8a3a00, #0b4f9e);
   --vp-home-hero-image-background-image: none;
   --vp-home-hero-image-filter: none;
 
@@ -44,34 +59,55 @@
 }
 
 .dark {
-  --vp-c-brand-1: #ff9e64;
-  --vp-c-brand-2: #f7b083;
-  --vp-c-brand-3: #d98b5a;
-  --vp-c-brand-soft: rgb(255 158 100 / 16%);
+  --vp-c-bg: #12141c;
+  --vp-c-bg-alt: #181b24;
+  --vp-c-bg-soft: #1d212b;
+  --vp-c-bg-elv: #181b24;
 
-  --vp-c-tip-1: #7aa2f7;
-  --vp-c-tip-2: #93b4f8;
-  --vp-c-tip-3: #6f8fd6;
-  --vp-c-tip-soft: rgb(122 162 247 / 16%);
+  --vp-c-text-1: #f2f5fa;
+  --vp-c-text-2: #b8c4d6;
+  --vp-c-text-3: #a7b2c2;
 
-  --vp-c-warning-1: #e0af68;
-  --vp-c-warning-2: #d9a45c;
-  --vp-c-warning-3: #b98a48;
-  --vp-c-warning-soft: rgb(224 175 104 / 16%);
+  --vp-c-brand-1: #ffb27a;
+  --vp-c-brand-2: #ffc79c;
+  --vp-c-brand-3: #e09a65;
+  --vp-c-brand-soft: rgb(255 178 122 / 16%);
 
-  --vp-c-danger-1: #f7768e;
-  --vp-c-danger-2: #e5667c;
-  --vp-c-danger-3: #c2556a;
-  --vp-c-danger-soft: rgb(247 118 142 / 16%);
+  --vp-c-tip-1: #8cc2ff;
+  --vp-c-tip-2: #a8d3ff;
+  --vp-c-tip-3: #77aae6;
+  --vp-c-tip-soft: rgb(140 194 255 / 16%);
 
-  --vp-c-indigo-1: #bb9af7;
-  --vp-c-indigo-2: #a98ff0;
-  --vp-c-indigo-3: #9a7ee0;
-  --vp-c-indigo-soft: rgb(187 154 247 / 16%);
+  --vp-c-warning-1: #f2cc73;
+  --vp-c-warning-2: #f7d998;
+  --vp-c-warning-3: #d5b15e;
+  --vp-c-warning-soft: rgb(242 204 115 / 16%);
+
+  --vp-c-danger-1: #ff8fa3;
+  --vp-c-danger-2: #ffb0be;
+  --vp-c-danger-3: #df788b;
+  --vp-c-danger-soft: rgb(255 143 163 / 16%);
+
+  --vp-c-indigo-1: #c4a7ff;
+  --vp-c-indigo-2: #d5bfff;
+  --vp-c-indigo-3: #aa8de0;
+  --vp-c-indigo-soft: rgb(196 167 255 / 16%);
+
+  --vp-home-hero-name-background: linear-gradient(120deg, #ffb27a, #8cc2ff);
 }
 
 ::selection {
-  background: rgb(255 158 100 / 28%);
+  background: rgb(138 58 0 / 22%);
+}
+
+.dark ::selection {
+  background: rgb(255 178 122 / 28%);
+}
+
+/* キーボード操作で現在地が消えないように。色だけに頼らないための輪郭。 */
+:where(a, button, summary, input):focus-visible {
+  outline: 2px solid var(--vp-c-brand-1);
+  outline-offset: 3px;
 }
 
 /* ------------------------------------------------------------------
@@ -88,7 +124,7 @@
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  opacity: 0.7;
+  opacity: 0.85;
 }
 
 /* Disable ligatures so code is read exactly as written. */
@@ -114,16 +150,32 @@
 }
 
 /* ------------------------------------------------------------------
-   段落・表・details の見た目をそろえる
+   日本語の本文は行間を確保し、表中の数値は等幅で揃える
    ------------------------------------------------------------------ */
+
+.vp-doc p,
+.vp-doc li {
+  line-height: 1.85;
+}
+
+.vp-doc a:not(.header-anchor) {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
 
 .vp-doc table {
   display: table;
   width: 100%;
   font-size: 14px;
+  line-height: 1.6;
 }
 
 .vp-doc th {
+  background-color: var(--vp-c-bg-soft);
+}
+
+.vp-doc tbody tr:nth-child(even) {
   background-color: var(--vp-c-bg-soft);
 }
 
@@ -139,4 +191,10 @@
 /* 目次の現在地を強調する。 */
 .VPDocAsideOutline .outline-link.active {
   font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }

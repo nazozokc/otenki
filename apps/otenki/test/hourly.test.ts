@@ -131,8 +131,8 @@ describe("interval table", () => {
   test("paints the wet columns cyan", async () => {
     const { lines } = await withColorAsync(true, () => render(3));
 
-    expect(lines[3]).toContain("\u001B[36m0.0 mm\u001B[0m");
-    expect(lines[3]).toContain("\u001B[36m10%\u001B[0m");
+    expect(lines[3]).toContain("\u001B[96m0.0 mm\u001B[0m");
+    expect(lines[3]).toContain("\u001B[96m10%\u001B[0m");
   });
 
   test("strips control sequences the API puts in a time", async () => {

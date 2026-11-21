@@ -92,9 +92,7 @@ export const tomorrow = async (
     `${weatherIcon(day.weatherCode)} ${weatherLabel(day.weatherCode)}  ${temperature(formatTemperatureRange(day.temperatureMin, day.temperatureMax, units))}`,
   );
   console.log(
-    dim(
-      `${formatDay(day.time)} · 降水 ${formatPrecipitation(day.precipitationSum, units)}（確率 ${formatPrecipitationProbability(day.precipitationProbabilityMax)}） · 風 ${formatWindSpeed(day.windSpeedMax, units)}`,
-    ),
+    `${formatDay(day.time)} · 降水 ${formatPrecipitation(day.precipitationSum, units)}（確率 ${formatPrecipitationProbability(day.precipitationProbabilityMax)}） · 風 ${formatWindSpeed(day.windSpeedMax, units)}`,
   );
 };
 
