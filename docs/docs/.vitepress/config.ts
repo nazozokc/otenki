@@ -12,8 +12,8 @@ const base = process.env.DOCS_BASE ?? "/";
 /**
  * otenki ドキュメントサイト。
  *
- * 配色は CLI 側 (apps/otenki/src/style.ts) から持ってきた。
- * brand = temperature のオレンジ、accent = heading のブルー。
+ * 配色は WCAG AAA (7:1) を基準にした青とオレンジの高コントラスト構成。
+ * 詳細は theme/custom.css の冒頭コメントを参照。
  */
 export default defineConfig({
   lang: "ja-JP",

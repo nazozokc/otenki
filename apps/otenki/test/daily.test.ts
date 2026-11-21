@@ -162,8 +162,8 @@ describe("forecast table", () => {
       renderLines(weekly, ["2026-10-07"]),
     );
 
-    expect(lines[3]).toContain("\u001B[36m0.0 mm\u001B[0m");
-    expect(lines[3]).toContain("\u001B[36m10%\u001B[0m");
+    expect(lines[3]).toContain("\u001B[96m0.0 mm\u001B[0m");
+    expect(lines[3]).toContain("\u001B[96m10%\u001B[0m");
   });
 
   test("raises the voice for thunderstorms and heavy rain", async () => {
@@ -174,8 +174,8 @@ describe("forecast table", () => {
       renderLines(weekly, ["2026-10-07"], 65),
     );
 
-    expect(thunder[3]).toContain("\u001B[35m");
-    expect(heavy[3]).toContain("\u001B[1m\u001B[31m");
+    expect(thunder[3]).toContain("\u001B[95m");
+    expect(heavy[3]).toContain("\u001B[1m\u001B[91m");
   });
 });
 

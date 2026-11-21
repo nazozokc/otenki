@@ -1,14 +1,20 @@
-import type { ColorMode } from "./config.ts";
+import type { ColorMode, ThemeMode } from "./config.ts";
 
 /**
  * Minimal ANSI styling. `NO_COLOR` and a non-TTY stdout both disable colour, and
  * every helper returns plain text in that case, so callers never have to care.
  *
- * The palette is the terminal's own ANSI 16 colours rather than fixed RGB. The
- * actual shades behind `31`..`37` are whatever the user's theme maps them to,
- * which is what keeps the output readable on a light background and a dark one
- * alike. Hex codes would look identical everywhere and illegible on half of
- * them, so nothing here names a colour outright.
+ * The palette is the terminal's own ANSI colours rather than fixed RGB. That is
+ * deliberate: the same code means a light shade on a dark theme and a dark
+ * shade on a light one, so one set of helpers stays readable in both. The 3x
+ * codes are for light backgrounds and the 9x (bright) codes for dark ones — a
+ * plain blue or yellow on black is a classic unreadable pairing. `theme` in the
+ * config pins the choice when the terminal does not report its background.
+ *
+ * Colour is never the only signal: every coloured cell also says what it is in
+ * words (`降水`, `雷雨`, `✗`), so the output survives greyscale and colour-blind
+ * readers. See https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum
+ * and https://jfly.uni-koeln.de/color for the reasoning.
  */
 
 /**
@@ -23,6 +29,49 @@ export const setColorMode = (mode: ColorMode | undefined): void => {
   colorOverride = mode === "auto" ? undefined : mode;
 };
 
+/** `auto` and no key both mean "detect", so only explicit themes are stored. */
+let themeOverride: "dark" | "light" | undefined;
+
+export const setTheme = (mode: ThemeMode | undefined): void => {
+  themeOverride = mode === "auto" ? undefined : mode;
+};
+
+/**
+ * `COLORFGBG` is `foreground;background` (e.g. `15;0` in a dark terminal).
+ * Only terminals that publish it can be detected; most do not, and a dark
+ * terminal is the common case, so that is the fallback. No terminal query:
+ * probing OSC 11 would cost more latency than this whole CLI takes to start.
+ */
+const darkBackground = (): boolean => {
+  const hint = process.env.COLORFGBG;
+  if (hint === undefined || hint === "") return true;
+
+  const background = Number(hint.split(";").at(-1));
+  return Number.isFinite(background) ? background < 8 : true;
+};
+
+/** The ANSI variants in use right now, exposed for the tests. */
+export const colorTheme = (): "dark" | "light" =>
+  themeOverride ?? (darkBackground() ? "dark" : "light");
+
+type Palette = { accent: string; wet: string; thunder: string; alert: string };
+
+/** Bright variants on dark, base variants on light; see the header comment. */
+const PALETTES: Record<"dark" | "light", Palette> = {
+  dark: {
+    accent: "\u001B[93m",
+    wet: "\u001B[96m",
+    thunder: "\u001B[95m",
+    alert: "\u001B[91m",
+  },
+  light: {
+    accent: "\u001B[33m",
+    wet: "\u001B[36m",
+    thunder: "\u001B[35m",
+    alert: "\u001B[31m",
+  },
+};
+
 const enabled = (): boolean => {
   if (colorOverride !== undefined) return colorOverride === "always";
   return process.env.NO_COLOR === undefined && process.stdout.isTTY === true;
@@ -35,40 +84,34 @@ const BOLD = "\u001B[1m";
 /** Bright black, which every theme renders as its own readable grey. */
 const MUTED = "\u001B[90m";
 
-/** The theme's yellow, the warm accent that reads as sunlight. */
-const ACCENT = "\u001B[33m";
-
-const ALERT = "\u001B[31m";
-
-/** The theme's cyan, which every theme renders as water: rain and its odds. */
-const WET = "\u001B[36m";
-
-/** The theme's magenta, saved for thunderstorms. */
-const THUNDER = "\u001B[35m";
-
 const paint = (text: string, code: string): string =>
   enabled() ? `${code}${text}${RESET}` : text;
 
 /** The headline: place name and table headers. */
 export const bold = (text: string): string => paint(text, BOLD);
 
-/** Units and secondary detail, kept out of the way of the numbers. */
+/** Rules, missing values and the credit footnote. Incidental text only. */
 export const dim = (text: string): string => paint(text, MUTED);
 
 /** Temperature, the one number worth pulling the eye to. */
-export const temperature = (text: string): string => paint(text, ACCENT);
+export const temperature = (text: string): string =>
+  paint(text, PALETTES[colorTheme()].accent);
 
 /** Errors on stderr. */
-export const error = (text: string): string => paint(text, ALERT);
+export const error = (text: string): string =>
+  paint(text, PALETTES[colorTheme()].alert);
 
 /** Precipitation and the chance of it, the wet end of every forecast row. */
-export const wet = (text: string): string => paint(text, WET);
+export const wet = (text: string): string =>
+  paint(text, PALETTES[colorTheme()].wet);
 
 /** Thunderstorms: rare enough in a forecast that the colour can mean one thing. */
-export const thunder = (text: string): string => paint(text, THUNDER);
+export const thunder = (text: string): string =>
+  paint(text, PALETTES[colorTheme()].thunder);
 
 /** Heavy rain and heavy snow: bold red, the warning end of the palette. */
-export const heavy = (text: string): string => paint(text, BOLD + ALERT);
+export const heavy = (text: string): string =>
+  paint(text, BOLD + PALETTES[colorTheme()].alert);
 
 /**
  * The credit every command prints on stderr once its output is done: where the

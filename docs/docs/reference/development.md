@@ -111,6 +111,7 @@ apps/otenki/test/hourly.test.ts    時間別予報の窓と出力
 apps/otenki/test/locate.test.ts    locate の見出しと候補表
 apps/otenki/test/cache.test.ts     キャッシュの有効期限と形状検証
 apps/otenki/test/config.test.ts    設定ファイルの読込とバリデーション
+apps/otenki/test/style.test.ts     端末の明暗と ANSI カラーコードの選択
 apps/otenki/test/sanitize.test.ts  制御シーケンスの除去
 apps/otenki/test/cli.test.ts       引数解析、ヘルプ、終了コード
 apps/otenki/test/support.ts        色の固定と共通のヘルパー（テスト専用）
@@ -151,7 +152,7 @@ apps/otenki/test/support.ts        色の固定と共通のヘルパー（テス
 | `locate.ts`        | `locate` の出力                                               |
 | `fzf.ts`           | fzf の候補行、選択の突き合わせ、プロセス起動                  |
 | `format.ts`        | 温度、風、湿度、日付の表示形式                                |
-| `style.ts`         | ANSI 色。TTY と `NO_COLOR` と config の `color` を見る        |
+| `style.ts`         | ANSI 色。TTY、`NO_COLOR`、config の `color` と `theme` を見る |
 | `weather.icon.ts`  | 天気コードから絵文字                                          |
 | `weather.label.ts` | 天気コードから日本語表示名と色の強さ（雷・大雨）              |
 | `http.ts`          | タイムアウトと再試行を持つ fetch                              |
@@ -169,7 +170,7 @@ bun run build        # docs/docs/.vitepress/dist に出力
 bun run serve        # 出力をローカルで確認
 ```
 
-設定は `docs/docs/.vitepress/config.ts`、配色は `docs/docs/.vitepress/theme/custom.css` です。色は CLI の `style.ts` に合わせています。
+設定は `docs/docs/.vitepress/config.ts`、配色は `docs/docs/.vitepress/theme/custom.css` です。テーマ色は WCAG の AAA (7:1) と色覚多様性に配慮した青とオレンジをベースにしており、CLI の ANSI 色とは色番号を共有しません（CLI は利用者の端末テーマに合わせて明るい色を選びます）。
 
 VitePress のキャッシュは `.vitepress/cache` に出ます。`.gitignore` に入れてあるので、ステージされることはありません。
 

@@ -8,7 +8,8 @@ import {
   type Flags,
 } from "../src/cli.parse.ts";
 import type { Config } from "../src/config.ts";
-import { withColorAsync } from "./support.ts";
+import { displayWidth } from "../src/width.ts";
+import { plain, withColorAsync } from "./support.ts";
 
 const noop = async (): Promise<void> => {};
 
@@ -145,6 +146,30 @@ describe("help", () => {
     const text = help(commands);
 
     expect(text).toContain("$XDG_CONFIG_HOME/otenki/config.json");
+  });
+
+  test("shows copyable examples on the root help", () => {
+    const text = plain(() => help(commands));
+
+    expect(text).toContain("Examples:");
+    expect(text).toContain("otenki today 函館");
+    expect(text).toContain("otenki weekly 東京");
+  });
+
+  test("aligns descriptions by terminal width, not character count", () => {
+    const text = plain(() => help(commands));
+    const rows = text
+      .split("\n")
+      .filter((line) => line.startsWith("  otenki "));
+
+    // 函館 / 東京 are two cells wide; padding by string length would push the
+    // descriptions of the shorter examples one cell to the left.
+    const columns = rows.map((line) => {
+      const match = /^(.*?) {2,}([a-z].*)$/.exec(line);
+      return match === null ? -1 : displayWidth(`${match[1]}  `);
+    });
+    expect(columns.length).toBe(3);
+    expect(new Set(columns).size).toBe(1);
   });
 
   test("describes the positional argument of a command", () => {

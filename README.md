@@ -113,6 +113,7 @@ Every setting is optional. Put defaults in
   "location": "函館",
   "command": "today",
   "color": "auto",
+  "theme": "auto",
   "units": "metric",
   "days": 7
 }

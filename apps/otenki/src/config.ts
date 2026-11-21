@@ -16,6 +16,14 @@ export type Units = "metric" | "imperial";
 /** Overrides the TTY and `NO_COLOR` detection: `auto` is the detection. */
 export type ColorMode = "auto" | "always" | "never";
 
+/**
+ * Which ANSI variants the styling uses. Dark terminals get the bright 9x codes
+ * and light ones the plain 3x codes, because the same code is unreadable on the
+ * opposite background. `auto` follows `COLORFGBG` when the terminal reports it
+ * and otherwise assumes a dark terminal.
+ */
+export type ThemeMode = "auto" | "dark" | "light";
+
 /** A place name (`函館`, `横浜市 神奈川`) or a `[latitude, longitude]` pair. */
 export type DefaultLocation = string | [number, number];
 
@@ -26,6 +34,8 @@ export type Config = {
   command?: string;
   /** Colour policy. `auto` follows TTY and `NO_COLOR`. */
   color?: ColorMode;
+  /** Terminal background. `auto` follows `COLORFGBG`, then assumes dark. */
+  theme?: ThemeMode;
   /** Unit system for the API query and the rendered numbers. */
   units?: Units;
   /** Forecast days for `weekly` and `fortnight`, 1 to 16. */
@@ -93,7 +103,14 @@ export const stripNoConfig = (
   return { argv: out, noConfig };
 };
 
-const KEYS = ["location", "command", "color", "units", "days"] as const;
+const KEYS = [
+  "location",
+  "command",
+  "color",
+  "theme",
+  "units",
+  "days",
+] as const;
 
 // The explicit variable annotation is load-bearing: TypeScript only treats a
 // call as never-returning (and narrows the code after it) when the callee is a
@@ -194,6 +211,14 @@ const validate = (path: string, raw: unknown): Config => {
       "auto",
       "always",
       "never",
+    ] as const);
+  }
+
+  if (record.theme !== undefined) {
+    config.theme = validateEnum(path, "theme", record.theme, [
+      "auto",
+      "dark",
+      "light",
     ] as const);
   }
 

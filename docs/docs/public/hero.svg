@@ -11,33 +11,33 @@
   <rect x="0.5" y="0.5" width="639" height="40" rx="14" fill="#171a23" />
   <rect x="0.5" y="28" width="639" height="12" fill="#171a23" />
 
-  <circle cx="24" cy="20" r="5" fill="#f7768e" />
-  <circle cx="42" cy="20" r="5" fill="#e0af68" />
-  <circle cx="60" cy="20" r="5" fill="#7aa2f7" />
-  <text x="320" y="24" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" fill="#6b7280">otenki — 78×14</text>
+  <circle cx="24" cy="20" r="5" fill="#ff8fa3" />
+  <circle cx="42" cy="20" r="5" fill="#f2cc73" />
+  <circle cx="60" cy="20" r="5" fill="#8cc2ff" />
+  <text x="320" y="24" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" fill="#a7b2c2">otenki — 78×14</text>
 
   <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12.5" xml:space="preserve">
-    <text x="24" y="72" fill="#7aa2f7">$</text>
-    <text x="40" y="72" fill="#c0caf5">otenki today 函館</text>
+    <text x="24" y="72" fill="#8cc2ff">$</text>
+    <text x="40" y="72" fill="#b8c4d6">otenki today 函館</text>
 
-    <text x="24" y="102" fill="#ffffff" font-weight="600">函館市 北海道</text>
-    <text x="24" y="122" fill="#ffffff">☀️ 快晴  <tspan fill="#ff9e64">13.8℃</tspan>  <tspan fill="#8a8a8a">体感 12.1℃</tspan></text>
-    <text x="24" y="142" fill="#8a8a8a">風 9.1 km/h · 湿度 72% · 降水 0.0 mm · 2026-10-04 22:45</text>
+    <text x="24" y="102" fill="#f2f5fa" font-weight="600">函館市 北海道</text>
+    <text x="24" y="122" fill="#f2f5fa">☀️ 快晴  <tspan fill="#ffb27a">13.8℃</tspan>  <tspan fill="#a7b2c2">体感 12.1℃</tspan></text>
+    <text x="24" y="142" fill="#a7b2c2">風 9.1 km/h · 湿度 72% · 降水 0.0 mm · 2026-10-04 22:45</text>
 
-    <text x="24" y="164" fill="#7aa2f7">$</text>
-    <text x="40" y="164" fill="#c0caf5">otenki weekly 横浜</text>
+    <text x="24" y="164" fill="#8cc2ff">$</text>
+    <text x="40" y="164" fill="#b8c4d6">otenki weekly 横浜</text>
 
-    <text x="24" y="194" fill="#ffffff" font-weight="600">横浜市 神奈川県</text>
-    <text x="140" y="194" fill="#8a8a8a">— 7日間予報</text>
+    <text x="24" y="194" fill="#f2f5fa" font-weight="600">横浜市 神奈川県</text>
+    <text x="140" y="194" fill="#a7b2c2">— 7日間予報</text>
 
-    <text x="24" y="220" fill="#7aa2f7">日付        天気                 最低    最高    降水  確率       風速</text>
-    <text x="24" y="242" fill="#3b4261">──────────────────────────────────────────────────────────────────────</text>
-    <text x="24" y="264" fill="#d5d8e0">10-05 (火)  🌦️ 晴れ時々くもり  16.1℃  22.4℃  0.4 mm   30%  12.3 km/h</text>
-    <text x="24" y="286" fill="#d5d8e0">10-06 (水)  🌧️ 雨              14.8℃  19.2℃  8.1 mm   80%  18.7 km/h</text>
-    <text x="24" y="308" fill="#d5d8e0">10-07 (木)  ☀️ 快晴            15.0℃  21.7℃  0.0 mm   10%   9.4 km/h</text>
+    <text x="24" y="220" fill="#8cc2ff">日付        天気                 最低    最高    降水  確率       風速</text>
+    <text x="24" y="242" fill="#7c8ba1">──────────────────────────────────────────────────────────────────────</text>
+    <text x="24" y="264" fill="#e6edf3">10-05 (火)  🌦️ 晴れ時々くもり  16.1℃  22.4℃  0.4 mm   30%  12.3 km/h</text>
+    <text x="24" y="286" fill="#e6edf3">10-06 (水)  🌧️ 雨              14.8℃  19.2℃  8.1 mm   80%  18.7 km/h</text>
+    <text x="24" y="308" fill="#e6edf3">10-07 (木)  ☀️ 快晴            15.0℃  21.7℃  0.0 mm   10%   9.4 km/h</text>
 
-    <text x="24" y="348" fill="#7aa2f7">$</text>
-    <text x="40" y="348" fill="#c0caf5">otenki today 35.69,139.69</text>
-    <text x="24" y="372" fill="#8a8a8a">↑ 名前が曖昧でも、座標なら一意に決まる</text>
+    <text x="24" y="348" fill="#8cc2ff">$</text>
+    <text x="40" y="348" fill="#b8c4d6">otenki today 35.69,139.69</text>
+    <text x="24" y="372" fill="#a7b2c2">↑ 名前が曖昧でも、座標なら一意に決まる</text>
   </g>
 </svg>
